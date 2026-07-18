@@ -1,0 +1,16 @@
+{
+  "name": "ai-didimdol",
+  "version": "0.1.0",
+  "description": "Inclusive AI router that maps everyday Korean user goals to skill, MCP, and agent workflows.",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
+

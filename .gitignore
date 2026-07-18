@@ -1,0 +1,10 @@
+node_modules/
+.env
+.DS_Store
+*.log
+work/
+presentation-work/
+outputs/*.inspect.ndjson
+outputs/ai-didimdol-presentation/
+outputs/AI_디딤돌_포용적AI_발표자료/
+

@@ -1,0 +1,63 @@
+[
+  {
+    "id": "safety-coach",
+    "name": "Safety Coach",
+    "description": "위험 신호와 개인정보 입력 여부를 먼저 확인한다.",
+    "capabilities": ["위험 신호 탐지", "개인정보 보호"],
+    "taskTypes": ["verify"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 92
+  },
+  {
+    "id": "plain-language-helper",
+    "name": "Plain Language Helper",
+    "description": "사용자 수준에 맞춰 쉬운 말로 바꿔 설명한다.",
+    "capabilities": ["쉬운 말 변환"],
+    "taskTypes": ["understand", "learn"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 90
+  },
+  {
+    "id": "verification-agent",
+    "name": "Verification Agent",
+    "description": "AI 판단의 불확실성과 공식 확인 경로를 제시한다.",
+    "capabilities": ["공식 출처 확인", "다음 행동 안내"],
+    "taskTypes": ["verify", "compare"],
+    "privacyRisk": "medium",
+    "verified": true,
+    "trustScore": 86
+  },
+  {
+    "id": "explorer",
+    "name": "Explorer Agent",
+    "description": "가능성을 넓히고 여러 방향의 아이디어를 만든다.",
+    "capabilities": ["아이디어 생성"],
+    "taskTypes": ["create"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 80
+  },
+  {
+    "id": "critic",
+    "name": "Critic Agent",
+    "description": "필요성, 대체 가능성, 실패 가능성을 비판적으로 점검한다.",
+    "capabilities": ["아이디어 검증"],
+    "taskTypes": ["verify", "compare"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 83
+  },
+  {
+    "id": "planner",
+    "name": "Planner Agent",
+    "description": "실행 순서, 일정, 다음 행동을 만든다.",
+    "capabilities": ["다음 행동 안내", "일정 관리"],
+    "taskTypes": ["plan"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 81
+  }
+]
+

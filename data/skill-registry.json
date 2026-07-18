@@ -1,0 +1,83 @@
+[
+  {
+    "id": "plain-language",
+    "name": "쉬운 말 번역 스킬",
+    "description": "어려운 안내문, 문자, 문서를 쉬운 한국어로 바꾼다.",
+    "capabilities": ["쉬운 말 변환"],
+    "taskTypes": ["understand", "organize"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 91
+  },
+  {
+    "id": "privacy-redaction",
+    "name": "개인정보 가리기 스킬",
+    "description": "주민번호, 계좌번호, 인증번호, 비밀번호 같은 민감정보를 먼저 가리게 안내한다.",
+    "capabilities": ["개인정보 보호"],
+    "taskTypes": ["verify", "understand"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 94
+  },
+  {
+    "id": "phishing-check",
+    "name": "보이스피싱 위험 신호 체크 스킬",
+    "description": "송금 요구, 링크 클릭 유도, 협박성 표현, 인증번호 요구를 확인한다.",
+    "capabilities": ["위험 신호 탐지", "다음 행동 안내"],
+    "taskTypes": ["verify"],
+    "privacyRisk": "medium",
+    "verified": true,
+    "trustScore": 88
+  },
+  {
+    "id": "official-source-check",
+    "name": "공식 출처 확인 스킬",
+    "description": "공식 사이트, 대표번호, 공공기관 안내 경로를 통해 확인하도록 안내한다.",
+    "capabilities": ["공식 출처 확인", "다음 행동 안내"],
+    "taskTypes": ["verify", "plan"],
+    "privacyRisk": "medium",
+    "verified": true,
+    "trustScore": 86
+  },
+  {
+    "id": "family-summary",
+    "name": "가족 공유 요약 스킬",
+    "description": "보호자나 가족에게 보낼 짧고 안전한 확인 요청 문장을 만든다.",
+    "capabilities": ["가족 공유 문장 생성", "쉬운 말 변환"],
+    "taskTypes": ["create", "organize"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 84
+  },
+  {
+    "id": "heuristic-ideation",
+    "name": "Heuristic Ideation 스킬",
+    "description": "다양한 사고 휴리스틱으로 연구, 공모, 서비스 아이디어를 넓힌다.",
+    "capabilities": ["아이디어 생성"],
+    "taskTypes": ["create", "learn"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 82
+  },
+  {
+    "id": "startup-validating",
+    "name": "Startup Validating 스킬",
+    "description": "아이디어를 시장성, 실현성, 제품성, 비즈니스 모델, 확산, 실행 계획으로 검증한다.",
+    "capabilities": ["아이디어 검증", "다음 행동 안내"],
+    "taskTypes": ["verify", "plan", "compare"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 80
+  },
+  {
+    "id": "small-business-copy",
+    "name": "소상공인 홍보 문구 스킬",
+    "description": "고객, 채널, 혜택을 기준으로 홍보 문구와 실험안을 만든다.",
+    "capabilities": ["홍보 문구 생성", "문서 작성"],
+    "taskTypes": ["create", "compare"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 78
+  }
+]
+
