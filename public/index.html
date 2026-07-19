@@ -12,14 +12,14 @@
         <p class="eyebrow">Inclusive AI Router</p>
         <h1>AI 디딤돌</h1>
       </div>
-      <p class="tagline">생활 문제를 Skill, MCP, Agent 워크플로우로 자동 조합합니다.</p>
+      <p class="tagline">생활 언어를 Skill, MCP, Agent 워크플로로 자동 조합합니다.</p>
     </header>
 
     <main>
       <section class="hero">
         <div class="intro">
           <h2>사용자는 하고 싶은 일만 말합니다.</h2>
-          <p>AI 디딤돌은 질문을 8개 행동 목적, 위험도, 필요한 능력으로 나누고 최신 레지스트리에서 적절한 도구 조합을 찾습니다.</p>
+          <p>AI 디딤돌은 질문을 8개 행동 목적, 위험도, 필요한 능력으로 나누고 적절한 도구 조합과 바로 쓸 수 있는 결과물을 함께 만듭니다.</p>
         </div>
         <form id="routeForm" class="composer">
           <label for="userInput">사용자 입력</label>
@@ -27,7 +27,7 @@
           <div class="actions">
             <button type="submit">AI 활용 구조 만들기</button>
             <button type="button" id="hackathonExample" class="secondary">해커톤 예시</button>
-            <button type="button" id="businessExample" class="secondary">가게 홍보 예시</button>
+            <button type="button" id="businessExample" class="secondary">카페 홍보 예시</button>
           </div>
         </form>
       </section>
@@ -45,6 +45,11 @@
           <p class="panel-label">사용자용 결과</p>
           <h2 id="statusLabel">분석 대기</h2>
           <p id="summary">입력 후 버튼을 누르면 쉬운 말 결과가 표시됩니다.</p>
+        </article>
+
+        <article class="panel wide highlight">
+          <p class="panel-label">바로 쓸 수 있는 결과물</p>
+          <div id="deliverableList" class="deliverables"></div>
         </article>
 
         <article class="panel">
@@ -90,4 +95,3 @@
     <script src="/app.js"></script>
   </body>
 </html>
-

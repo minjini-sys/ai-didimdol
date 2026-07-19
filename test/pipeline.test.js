@@ -17,11 +17,12 @@ test("routes phishing-like message to safety workflow", async () => {
   assert.equal(result.safety.status, "confirm");
   assert.ok(result.userView.recommendedSkills.includes("보이스피싱 위험 신호 체크 스킬"));
   assert.ok(result.userView.recommendedAgents.includes("Safety Coach"));
+  assert.ok(result.userView.deliverables.length > 0);
 });
 
 test("routes hackathon idea request to ideation and validation workflow", async () => {
   const result = await runDidimdolPipeline(
-    "해커톤 포용적 AI 아이디어를 만들고 이게 필요할까 대체되지 않을까 검증하고 싶어.",
+    "해커톤 지정공모 포용적 AI 아이디어를 만들고 이게 필요할까 대체되지 않을까 검증하고 싶어.",
     config
   );
 
@@ -33,3 +34,18 @@ test("routes hackathon idea request to ideation and validation workflow", async 
   assert.ok(result.userView.recommendedSkills.includes("Startup Validating 스킬"));
 });
 
+test("creates usable copy and weekly plan for a small cafe request", async () => {
+  const result = await runDidimdolPipeline(
+    "작은 카페를 운영하는데 동네 손님에게 보낼 홍보 문구와 이번 주 실행 계획을 만들고 싶어.",
+    config
+  );
+
+  assert.ok(result.route.taskTypes.includes("create"));
+  assert.ok(result.route.taskTypes.includes("plan"));
+  assert.ok(result.route.capabilities.includes("홍보 문구 생성"));
+  assert.ok(result.route.capabilities.includes("실행 계획 생성"));
+  assert.ok(result.userView.recommendedSkills.includes("소상공인 홍보 문구 스킬"));
+  assert.ok(result.userView.recommendedSkills.includes("주간 실행 계획 스킬"));
+  assert.ok(result.userView.deliverables.some((section) => section.title.includes("홍보 문구")));
+  assert.ok(result.userView.deliverables.some((section) => section.title.includes("실행 계획")));
+});

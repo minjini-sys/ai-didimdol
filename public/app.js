@@ -1,5 +1,5 @@
 const examples = {
-  hackathon: "해커톤 지정공모 포용적 AI 주제에 맞는 아이디어를 만들고, 이게 필요할까 대체되지 않을까 진짜 도움이 될까 질문에 답할 수 있게 검증하고 싶어.",
+  hackathon: "해커톤 지정공모 포용적 AI 주제에 맞는 아이디어를 만들고, 이게 정말 필요할까, 기존 ChatGPT로 대체되지 않을까, 진짜 도움이 될까를 검증하고 싶어.",
   business: "작은 카페를 운영하는데 동네 손님에게 보낼 홍보 문구와 이번 주 실행 계획을 만들고 싶어."
 };
 
@@ -14,6 +14,7 @@ const mcpList = document.querySelector("#mcpList");
 const agentList = document.querySelector("#agentList");
 const stepList = document.querySelector("#stepList");
 const safetyList = document.querySelector("#safetyList");
+const deliverableList = document.querySelector("#deliverableList");
 
 document.querySelector("#hackathonExample").addEventListener("click", () => {
   input.value = examples.hackathon;
@@ -42,7 +43,8 @@ form.addEventListener("submit", async (event) => {
 
 function setLoading() {
   statusLabel.textContent = "분석 중";
-  summary.textContent = "목적, 위험도, 필요한 능력을 분류하고 있습니다.";
+  summary.textContent = "목적, 위험도, 필요한 능력을 분류하고 결과물을 만들고 있습니다.";
+  deliverableList.innerHTML = "<p class=\"empty\">결과물을 준비하는 중입니다.</p>";
 }
 
 function render(data) {
@@ -62,11 +64,12 @@ function render(data) {
   renderList(mcpList, data.matches.mcps);
   renderList(agentList, data.matches.agents);
   renderSteps(stepList, view.steps);
+  renderDeliverables(deliverableList, view.deliverables);
 
   const safetyItems = [...view.warnings, ...view.confirmations];
   safetyList.innerHTML = "";
   if (safetyItems.length === 0) {
-    safetyList.innerHTML = "<li>추가 차단 조건이 없습니다.</li>";
+    safetyList.innerHTML = "<li>추가 차단 조건은 없습니다.</li>";
   } else {
     safetyItems.forEach((item) => safetyList.insertAdjacentHTML("beforeend", `<li>${escapeHtml(item)}</li>`));
   }
@@ -103,6 +106,24 @@ function renderSteps(target, items) {
   items.forEach((item) => target.insertAdjacentHTML("beforeend", `<li>${escapeHtml(item)}</li>`));
 }
 
+function renderDeliverables(target, sections = []) {
+  target.innerHTML = "";
+  if (!sections.length) {
+    target.innerHTML = "<p class=\"empty\">아직 생성된 결과물이 없습니다.</p>";
+    return;
+  }
+
+  sections.forEach((section) => {
+    const items = section.items
+      .map((item) => `<li>${escapeHtml(item)}</li>`)
+      .join("");
+    target.insertAdjacentHTML(
+      "beforeend",
+      `<section class="deliverable-section"><h3>${escapeHtml(section.title)}</h3><ul>${items}</ul></section>`
+    );
+  });
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -113,4 +134,3 @@ function escapeHtml(value) {
 }
 
 form.dispatchEvent(new Event("submit"));
-

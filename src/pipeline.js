@@ -31,8 +31,8 @@ function buildUserView(route, matches, safety, plan) {
     recommendedMcps: matches.mcps.map((mcp) => mcp.name),
     recommendedAgents: matches.agents.map((agent) => agent.name),
     steps: plan.steps,
+    deliverables: plan.deliverables,
     warnings: safety.warnings,
     confirmations: safety.requiredConfirmations
   };
 }
-

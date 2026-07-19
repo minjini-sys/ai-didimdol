@@ -2,7 +2,7 @@
   {
     "id": "web-search",
     "name": "Web Search MCP",
-    "description": "공식 사이트, 기관 안내, 최신 자료를 확인한다.",
+    "description": "공식 사이트, 기관 안내, 최신 자료를 확인합니다.",
     "capabilities": ["공식 출처 확인"],
     "taskTypes": ["verify", "understand"],
     "privacyRisk": "medium",
@@ -12,7 +12,7 @@
   {
     "id": "public-data",
     "name": "Public Data MCP",
-    "description": "공공데이터나 기관 데이터를 찾아 검증 근거로 사용한다.",
+    "description": "공공데이터나 기관 데이터를 찾아 검증 근거로 사용합니다.",
     "capabilities": ["공식 출처 확인", "다음 행동 안내"],
     "taskTypes": ["verify", "plan"],
     "privacyRisk": "medium",
@@ -22,7 +22,7 @@
   {
     "id": "file-reader",
     "name": "File Reader MCP",
-    "description": "첨부 문서, 안내문, 신청서를 읽고 요약한다.",
+    "description": "첨부 문서, 안내문, 신청서를 읽고 요약합니다.",
     "capabilities": ["쉬운 말 변환", "문서 작성"],
     "taskTypes": ["understand", "organize"],
     "privacyRisk": "high",
@@ -32,8 +32,8 @@
   {
     "id": "calendar",
     "name": "Calendar MCP",
-    "description": "마감, 예약, 실행 일정을 캘린더와 연결한다.",
-    "capabilities": ["일정 관리", "다음 행동 안내"],
+    "description": "마감, 예약, 실행 일정을 캘린더와 연결합니다.",
+    "capabilities": ["일정 관리", "다음 행동 안내", "실행 계획 생성"],
     "taskTypes": ["plan", "connect"],
     "privacyRisk": "medium",
     "verified": true,
@@ -42,7 +42,7 @@
   {
     "id": "github",
     "name": "GitHub MCP",
-    "description": "아이디어, 코드, 문서 변경 이력을 저장소에 남긴다.",
+    "description": "아이디어, 코드, 문서 변경 이력을 저장소에 남깁니다.",
     "capabilities": ["저장소 관리", "문서 작성"],
     "taskTypes": ["connect", "plan"],
     "privacyRisk": "medium",
@@ -52,7 +52,7 @@
   {
     "id": "messaging",
     "name": "Messaging MCP",
-    "description": "가족이나 보호자에게 공유할 메시지를 보낼 수 있게 연결한다.",
+    "description": "가족이나 보호자에게 공유할 메시지를 보낼 수 있게 연결합니다.",
     "capabilities": ["가족 공유 문장 생성"],
     "taskTypes": ["connect", "create"],
     "privacyRisk": "high",
@@ -60,4 +60,3 @@
     "trustScore": 54
   }
 ]
-

@@ -47,11 +47,18 @@ export async function routeInput(input, llm) {
 }
 
 function normalizeRoute(route, fallback) {
+  const taskTypes = Array.isArray(route.taskTypes) && route.taskTypes.length
+    ? unique([...fallback.taskTypes, ...route.taskTypes])
+    : fallback.taskTypes;
+  const capabilities = Array.isArray(route.capabilities) && route.capabilities.length
+    ? unique([...fallback.capabilities, ...route.capabilities])
+    : fallback.capabilities;
+
   return {
     intent: route.intent || fallback.intent,
-    taskTypes: Array.isArray(route.taskTypes) && route.taskTypes.length ? route.taskTypes : fallback.taskTypes,
+    taskTypes,
     riskLevel: ["low", "medium", "high", "blocked"].includes(route.riskLevel) ? route.riskLevel : fallback.riskLevel,
-    capabilities: Array.isArray(route.capabilities) && route.capabilities.length ? route.capabilities : fallback.capabilities,
+    capabilities,
     supported: ["supported", "partial", "unsupported"].includes(route.supported) ? route.supported : fallback.supported,
     confidence: typeof route.confidence === "number" ? route.confidence : fallback.confidence,
     model: route.model || fallback.model
@@ -63,4 +70,3 @@ function summarizeIntent(input) {
   if (compact.length <= 80) return compact;
   return `${compact.slice(0, 77)}...`;
 }
-

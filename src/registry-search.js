@@ -32,8 +32,17 @@ function rank(items, route) {
 }
 
 function scoreItem(item, route) {
+  const broadCapabilities = new Set(["다음 행동 안내", "문서 작성", "일정 관리"]);
+  const specificRouteCapabilities = route.capabilities.filter((capability) => !broadCapabilities.has(capability));
+  const hasSpecificMatch =
+    specificRouteCapabilities.length === 0 ||
+    specificRouteCapabilities.some((capability) => item.capabilities.includes(capability));
+
+  if (!hasSpecificMatch) return 0;
+
   const capabilityScore = route.capabilities.reduce((sum, capability) => {
-    return sum + (item.capabilities.includes(capability) ? 3 : 0);
+    if (!item.capabilities.includes(capability)) return sum;
+    return sum + (broadCapabilities.has(capability) ? 1 : 4);
   }, 0);
   const taskScore = route.taskTypes.reduce((sum, taskType) => {
     return sum + (item.taskTypes?.includes(taskType) ? 2 : 0);

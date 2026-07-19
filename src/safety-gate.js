@@ -12,7 +12,7 @@ export function applySafetyGate(route, matches) {
     status = status === "block" ? status : "confirm";
     warnings.push("개인정보, 돈, 건강, 사기 가능성이 있어 바로 실행하지 않고 안전 확인을 먼저 합니다.");
     requiredConfirmations.push("주민번호, 계좌번호, 인증번호, 비밀번호는 입력하지 않거나 가려야 합니다.");
-    requiredConfirmations.push("최종 판단은 공식 기관, 병원 대표번호, 보호자 등 사람 확인을 거쳐야 합니다.");
+    requiredConfirmations.push("최종 판단은 공식 기관, 병원 대표번호, 보호자 확인을 거쳐야 합니다.");
   }
 
   if (matches.mcps.some((mcp) => mcp.privacyRisk === "high")) {
@@ -25,4 +25,3 @@ export function applySafetyGate(route, matches) {
     requiredConfirmations
   };
 }
-
