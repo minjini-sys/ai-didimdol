@@ -5,7 +5,7 @@ import { runDidimdolPipeline } from "../src/pipeline.js";
 const mockRepo = {
   name: "comment-moderation-agent",
   full_name: "example/comment-moderation-agent",
-  description: "AI agent workflow for comment moderation and classification",
+  description: "AI workflow for comment moderation and classification",
   html_url: "https://github.com/example/comment-moderation-agent",
   stargazers_count: 120,
   updated_at: new Date().toISOString(),
@@ -29,7 +29,7 @@ test("detects user intent before searching for skills", async (t) => {
   assert.ok(result.userView.intent.needs.includes("댓글 분석과 악성 댓글 분류"));
 });
 
-test("explains internet skill candidates in plain Korean", async (t) => {
+test("explains internet skill candidates in plain Korean with filled sections", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => {
     globalThis.fetch = originalFetch;
@@ -45,13 +45,14 @@ test("explains internet skill candidates in plain Korean", async (t) => {
   assert.equal(result.userView.search.source, "GitHub 실시간 검색");
   assert.equal(candidate.fullName, "example/comment-moderation-agent");
   assert.ok(candidate.plainTitle.includes("댓글"));
-  assert.ok(candidate.plainSummary.includes("댓글") || candidate.plainSummary.includes("문제"));
-  assert.ok(candidate.helpsWith.some((item) => item.includes("댓글")));
-  assert.ok(candidate.caution.length > 0);
+  assert.ok(candidate.helpsWith.length > 0);
+  assert.ok(candidate.intentFit.includes("댓글 분석과 악성 댓글 분류"));
+  assert.ok(["낮음", "보통", "높음"].includes(candidate.riskLevel));
+  assert.notEqual(candidate.riskLevel, "확인 필요");
   assert.equal(candidate.downloadPolicy, "승인 전에는 다운로드하지 않고, 로컬에도 저장하지 않습니다.");
 });
 
-test("marks broad desktop automation tools as hold candidates", async (t) => {
+test("high risk candidates cannot be approved or downloaded", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => {
     globalThis.fetch = originalFetch;
@@ -62,13 +63,13 @@ test("marks broad desktop automation tools as hold candidates", async (t) => {
       return {
         items: [
           {
-            name: "desktop-agent",
-            full_name: "example/desktop-agent",
-            description: "Personal AI desktop agent with browser automation and terminal commands",
-            html_url: "https://github.com/example/desktop-agent",
-            stargazers_count: 500,
+            name: "browserwing",
+            full_name: "browserwing/browserwing",
+            description: "Browser automation agent that can run terminal commands and control a browser",
+            html_url: "https://github.com/browserwing/browserwing",
+            stargazers_count: 1377,
             updated_at: new Date().toISOString(),
-            owner: { login: "example" }
+            owner: { login: "browserwing" }
           }
         ]
       };
@@ -81,9 +82,10 @@ test("marks broad desktop automation tools as hold candidates", async (t) => {
   );
 
   const candidate = result.userView.candidates[0];
-  assert.equal(candidate.verdict.label, "추천 보류");
-  assert.equal(candidate.riskLevel, "보류");
-  assert.ok(candidate.caution.some((item) => item.includes("바로 사용하면 위험")));
+  assert.equal(candidate.riskLevel, "높음");
+  assert.equal(candidate.canApprove, false);
+  assert.equal(candidate.verdict.label, "다운로드 차단");
+  assert.ok(candidate.riskReason.includes("바로 다운로드하지 않습니다"));
 });
 
 test("routes contest notices to document requirement extraction", async (t) => {
@@ -129,6 +131,8 @@ test("approval does not store the skill locally in this step", async () => {
     plainTitle: "댓글을 분류하거나 문제 댓글을 찾는 도구 후보",
     plainSummary: "댓글을 읽고 유형별로 나누는 데 쓰일 수 있는 후보입니다.",
     verdict: { label: "검토 추천", reason: "다음 단계에서 읽어볼 만합니다." },
+    riskLevel: "낮음",
+    canApprove: true,
     url: "https://github.com/example/comment-moderation-agent"
   };
 

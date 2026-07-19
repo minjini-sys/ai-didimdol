@@ -188,9 +188,28 @@ textarea {
   color: var(--danger);
 }
 
+.verdict.block,
+.risk.high {
+  border-color: #d99487;
+  background: #fff1ee;
+  color: var(--danger);
+}
+
 .verdict.weak {
   background: var(--soft);
   color: var(--muted);
+}
+
+.risk.low {
+  border-color: #9bc8b9;
+  background: #eef8f4;
+  color: #176250;
+}
+
+.risk.medium {
+  border-color: #dfcf9a;
+  background: #fffbea;
+  color: #6f5a16;
 }
 
 .candidate-card h3 {
@@ -229,13 +248,13 @@ textarea {
   line-height: 1.6;
 }
 
-.explain-block.caution {
-  background: #fffaf8;
-}
-
 .verdict-reason {
   margin-bottom: 0;
   font-weight: 700;
+}
+
+.risk-reason {
+  margin-bottom: 0;
 }
 
 .source-line {
@@ -251,6 +270,14 @@ textarea {
   padding: 14px;
   border: 1px solid var(--line);
   background: var(--soft);
+}
+
+.blocked-box {
+  padding: 14px;
+  border: 1px solid #e6b9ad;
+  background: #fff4f1;
+  color: var(--danger);
+  font-weight: 800;
 }
 
 .privacy-note {

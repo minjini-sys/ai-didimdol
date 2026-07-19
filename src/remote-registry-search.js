@@ -1,4 +1,28 @@
-const riskyWords = ["desktop", "browser automation", "terminal", "shell", "command", "autonomous", "agent2agent", "pentest", "exploit", "password", "credential", "crash"];
+const highRiskWords = [
+  "browser automation",
+  "desktop automation",
+  "terminal",
+  "shell",
+  "command",
+  "autonomous",
+  "agent2agent",
+  "pentest",
+  "exploit",
+  "password",
+  "credential",
+  "crash"
+];
+
+const mediumRiskWords = [
+  "desktop",
+  "browser",
+  "api key",
+  "token",
+  "file access",
+  "agent",
+  "mcp",
+  "automation"
+];
 
 export async function searchRemoteSkills(route, config = {}) {
   const queries = buildSkillQueries(route).slice(0, config.dynamicRegistryMaxQueries || 3);
@@ -13,7 +37,7 @@ export async function searchRemoteSkills(route, config = {}) {
     .filter(isLikelySkillRepository)
     .map(scoreCandidate)
     .map(addPlainKoreanEvaluation)
-    .filter((candidate) => !isClearlyUnsafeOrUnhelpful(candidate))
+    .filter((candidate) => !isClearlyUnhelpful(candidate))
     .sort((a, b) => verdictRank(a) - verdictRank(b) || b.score - a.score || b.stars - a.stars)
     .slice(0, config.dynamicRegistryLimit || 5);
 
@@ -22,17 +46,6 @@ export async function searchRemoteSkills(route, config = {}) {
     searchedQueries: queries,
     candidates
   };
-}
-
-function isClearlyUnsafeOrUnhelpful(candidate) {
-  const text = `${candidate.name} ${candidate.fullName} ${candidate.originalDescription}`.toLowerCase();
-  return text.includes("server-crash") || text.includes("crash server") || text.includes("exploit") || text.includes("pentest");
-}
-
-function verdictRank(candidate) {
-  if (candidate.verdict?.label === "검토 추천") return 0;
-  if (candidate.verdict?.label === "약한 후보") return 1;
-  return 2;
 }
 
 function buildSkillQueries(route) {
@@ -83,28 +96,50 @@ function normalizeSkillCandidate(repo, query, route) {
 }
 
 function addPlainKoreanEvaluation(candidate) {
-  const text = `${candidate.name} ${candidate.fullName} ${candidate.originalDescription}`.toLowerCase();
-  const riskFlags = riskyWords.filter((word) => text.includes(word));
-  const intentFit = explainIntentFit(candidate);
-  const helpsWith = explainHelpsWith(candidate);
-  const caution = explainCaution(candidate, riskFlags);
-  const verdict = buildVerdict(candidate, riskFlags);
-
+  const risk = assessRisk(candidate);
   return {
     ...candidate,
     plainTitle: makePlainTitle(candidate),
     plainSummary: makePlainSummary(candidate),
-    helpsWith,
-    intentFit,
-    caution,
-    verdict,
-    riskLevel: riskFlags.length > 0 ? "보류" : "낮음",
-    riskFlags
+    helpsWith: explainHelpsWith(candidate),
+    intentFit: explainIntentFit(candidate),
+    verdict: buildVerdict(candidate, risk),
+    riskLevel: risk.level,
+    riskReason: risk.reason,
+    riskFlags: risk.flags,
+    canApprove: risk.level !== "높음"
+  };
+}
+
+function assessRisk(candidate) {
+  const text = candidateText(candidate);
+  const highFlags = highRiskWords.filter((word) => text.includes(word));
+  if (highFlags.length > 0) {
+    return {
+      level: "높음",
+      flags: highFlags,
+      reason: "브라우저, 컴퓨터, 터미널, 비밀번호, 자동 실행처럼 권한이 큰 표현이 있어 바로 다운로드하지 않습니다."
+    };
+  }
+
+  const mediumFlags = mediumRiskWords.filter((word) => text.includes(word));
+  if (mediumFlags.length > 0) {
+    return {
+      level: "보통",
+      flags: mediumFlags,
+      reason: "외부 도구나 자동화와 관련이 있어 다음 단계에서 파일 내용을 읽고 한 번 더 확인해야 합니다."
+    };
+  }
+
+  return {
+    level: "낮음",
+    flags: [],
+    reason: "저장소 설명만 보면 큰 권한을 요구하는 표현은 보이지 않습니다."
   };
 }
 
 function makePlainTitle(candidate) {
-  const text = `${candidate.name} ${candidate.originalDescription}`.toLowerCase();
+  const text = candidateText(candidate);
   if (text.includes("youtube") || text.includes("comment") || text.includes("moderation")) {
     return "댓글을 분류하거나 문제 댓글을 찾는 도구 후보";
   }
@@ -124,7 +159,7 @@ function makePlainTitle(candidate) {
 }
 
 function makePlainSummary(candidate) {
-  const text = `${candidate.name} ${candidate.originalDescription}`.toLowerCase();
+  const text = candidateText(candidate);
   if (text.includes("desktop") || text.includes("browser automation")) {
     return "사용자 컴퓨터나 브라우저에서 작업을 대신 실행하는 성격이 강한 도구입니다.";
   }
@@ -147,7 +182,7 @@ function makePlainSummary(candidate) {
 }
 
 function explainHelpsWith(candidate) {
-  const text = `${candidate.name} ${candidate.originalDescription}`.toLowerCase();
+  const text = candidateText(candidate);
   const items = [];
   if (text.includes("comment")) items.push("댓글 내용을 읽고 분류하는 작업");
   if (text.includes("moderation") || text.includes("toxicity")) items.push("악성 표현이나 문제 댓글을 걸러내는 작업");
@@ -164,30 +199,23 @@ function explainIntentFit(candidate) {
   return `"${candidate.intentLabel}"와 관련된 후보를 찾기 위해 "${query}"로 검색했고, 저장소 이름이나 설명에서 관련 단어가 발견되었습니다.`;
 }
 
-function explainCaution(candidate, riskFlags) {
-  if (riskFlags.length > 0) {
-    return [
-      "컴퓨터, 브라우저, 터미널, 자동 실행 같은 권한이 필요한 표현이 보여서 바로 사용하면 위험할 수 있습니다.",
-      "지금 단계에서는 다운로드하거나 실행하지 말고, README와 Skill 파일을 먼저 읽어 안전한지 확인해야 합니다."
-    ];
-  }
-  if (candidate.originalDescription === "저장소 설명이 없습니다.") {
-    return ["설명이 부족해서 실제로 쓸 수 있는 Skill인지 확인이 필요합니다."];
-  }
-  return ["아직 README와 파일 구조를 읽지 않았기 때문에, 실제 사용 가능 여부는 다음 단계에서 확인해야 합니다."];
-}
-
-function buildVerdict(candidate, riskFlags) {
-  if (riskFlags.length > 0) {
+function buildVerdict(candidate, risk) {
+  if (risk.level === "높음") {
     return {
-      label: "추천 보류",
-      reason: "요청과 관련은 있어 보이지만 권한이 큰 도구일 수 있어 먼저 안전 검사가 필요합니다."
+      label: "다운로드 차단",
+      reason: "권한이 큰 도구일 수 있어 사용자가 승인해도 이 단계에서는 다운로드하지 않습니다."
+    };
+  }
+  if (risk.level === "보통") {
+    return {
+      label: "검토 필요",
+      reason: "요청과 관련은 있어 보이지만, 다음 단계에서 README와 Skill 파일을 읽고 안전성을 한 번 더 확인해야 합니다."
     };
   }
   if (candidate.score >= 70) {
     return {
       label: "검토 추천",
-      reason: "요청과 관련된 단어가 많고 최근성이나 사용 흔적도 있어 다음 단계에서 내용을 읽어볼 만합니다."
+      reason: "요청과 관련된 단어가 많고 큰 위험 표현이 없어 다음 단계에서 내용을 읽어볼 만합니다."
     };
   }
   return {
@@ -197,13 +225,18 @@ function buildVerdict(candidate, riskFlags) {
 }
 
 function isLikelySkillRepository(candidate) {
-  const text = `${candidate.name} ${candidate.fullName} ${candidate.originalDescription}`.toLowerCase();
+  const text = candidateText(candidate);
   if (text.includes("awesome") || text.includes("public-apis")) return false;
-  return ["skill", "agent", "prompt", "mcp", "workflow", "automation", "assistant", "classification", "moderation", "analysis", "toxicity", "comment"].some((word) => text.includes(word));
+  return ["skill", "agent", "prompt", "mcp", "workflow", "automation", "assistant", "classification", "moderation", "analysis", "toxicity", "comment", "document"].some((word) => text.includes(word));
+}
+
+function isClearlyUnhelpful(candidate) {
+  const text = candidateText(candidate);
+  return text.includes("server-crash") || text.includes("crash server") || text.includes("exploit") || text.includes("pentest");
 }
 
 function scoreCandidate(candidate) {
-  const text = `${candidate.name} ${candidate.fullName} ${candidate.originalDescription}`.toLowerCase();
+  const text = candidateText(candidate);
   const starsScore = Math.min(35, Math.floor(Math.log10(candidate.stars + 1) * 12));
   const freshnessScore = isRecentlyUpdated(candidate.updatedAt) ? 25 : 5;
   const skillWordScore = ["skill", "agent", "prompt", "mcp", "workflow"].reduce((sum, word) => sum + (text.includes(word) ? 8 : 0), 0);
@@ -217,6 +250,17 @@ function scoreCandidate(candidate) {
     ...candidate,
     score: starsScore + freshnessScore + skillWordScore + descriptionScore + queryMatchScore
   };
+}
+
+function verdictRank(candidate) {
+  if (candidate.verdict?.label === "검토 추천") return 0;
+  if (candidate.verdict?.label === "검토 필요") return 1;
+  if (candidate.verdict?.label === "약한 후보") return 2;
+  return 3;
+}
+
+function candidateText(candidate) {
+  return `${candidate.name} ${candidate.fullName} ${candidate.originalDescription}`.toLowerCase();
 }
 
 function isRecentlyUpdated(dateText) {
