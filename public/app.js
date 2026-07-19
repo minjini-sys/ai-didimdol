@@ -4,17 +4,44 @@ const resultBody = document.querySelector("#resultBody");
 const routerDetails = document.querySelector("#routerDetails");
 const routerTrace = document.querySelector("#routerTrace");
 
+const session = {
+  originalInput: "",
+  answers: {},
+  pendingQuestion: null
+};
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const value = input.value.trim();
   if (!value) return;
 
+  if (session.pendingQuestion) {
+    session.answers[session.pendingQuestion.id] = value;
+    input.value = "";
+    await submitRoute(session.originalInput, { answers: session.answers });
+    return;
+  }
+
+  session.originalInput = value;
+  session.answers = {};
+  session.pendingQuestion = null;
+  await submitRoute(value);
+});
+
+input.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    form.requestSubmit();
+  }
+});
+
+async function submitRoute(value, extra = {}) {
   setLoading();
 
   const response = await fetch("/api/route", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ input: value })
+    body: JSON.stringify({ input: value, ...extra })
   });
   const data = await response.json();
 
@@ -25,22 +52,89 @@ form.addEventListener("submit", async (event) => {
   }
 
   render(data.userView);
-});
-
-input.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && !event.shiftKey) {
-    event.preventDefault();
-    form.requestSubmit();
-  }
-});
+}
 
 function setLoading() {
-  resultBody.innerHTML = "<p class=\"empty\">결과를 만들고 있습니다.</p>";
+  resultBody.innerHTML = "<p class=\"empty\">생각하고 있습니다.</p>";
   routerTrace.innerHTML = "";
   routerDetails.hidden = true;
 }
 
 function render(view) {
+  if (view.mode === "clarify") {
+    renderClarification(view);
+    return;
+  }
+
+  if (view.mode === "skill-consent") {
+    renderSkillConsent(view);
+    return;
+  }
+
+  session.pendingQuestion = null;
+  input.placeholder = "원하는 일을 한 문장으로 적어보세요.";
+  renderAnswer(view);
+}
+
+function renderClarification(view) {
+  session.pendingQuestion = view.question;
+  resultBody.innerHTML = `
+    <section class="question-panel">
+      <p class="step-label">조금만 더 알려주세요</p>
+      <h2>${escapeHtml(view.question.text)}</h2>
+    </section>
+  `;
+  input.placeholder = view.question.placeholder || "답변을 입력해 주세요.";
+  input.focus();
+  routerDetails.hidden = true;
+}
+
+function renderSkillConsent(view) {
+  session.pendingQuestion = null;
+  input.placeholder = "승인 후 결과가 만들어집니다.";
+  const skills = view.consent.skills || [];
+  const cards = skills.map((skill) => `
+    <article class="consent-card">
+      <h3>${escapeHtml(skill.name)}</h3>
+      <p>${escapeHtml(skill.reason)}</p>
+      <p class="security-note">${escapeHtml(skill.securityNote)}</p>
+      <p class="source-note">${escapeHtml(skill.source)}</p>
+    </article>
+  `).join("");
+
+  resultBody.innerHTML = `
+    <section class="question-panel">
+      <p class="step-label">확인이 필요합니다</p>
+      <h2>${escapeHtml(view.title)}</h2>
+      <p>${escapeHtml(view.summary)}</p>
+    </section>
+    <div class="consent-list">${cards}</div>
+    <div class="consent-actions">
+      <button type="button" class="primary-action" id="approveSkills">네, 사용하고 결과 만들기</button>
+      <button type="button" class="secondary-action" id="denySkills">아니요, 사용하지 않고 진행</button>
+    </div>
+  `;
+
+  document.querySelector("#approveSkills").addEventListener("click", () => {
+    submitRoute(session.originalInput, {
+      answers: session.answers,
+      skillConsent: "approved",
+      approvedSkillIds: skills.map((skill) => skill.id)
+    });
+  });
+
+  document.querySelector("#denySkills").addEventListener("click", () => {
+    submitRoute(session.originalInput, {
+      answers: session.answers,
+      skillConsent: "denied",
+      rejectedSkillIds: skills.map((skill) => skill.id)
+    });
+  });
+
+  routerDetails.hidden = true;
+}
+
+function renderAnswer(view) {
   const warnings = view.warnings || [];
   resultBody.innerHTML = "";
 

@@ -6,6 +6,9 @@ const capabilityQueries = {
   "댓글 분석": ["youtube comment analysis tool", "comment analysis agent", "social media comment analysis"],
   "악성 댓글 분류": ["toxicity classification tool", "comment moderation agent", "abusive comment detection"],
   "스프레드시트 저장": ["google sheets mcp server", "spreadsheet automation agent", "google sheets api tool"],
+  "회의 받아쓰기": ["audio transcription mcp server", "meeting transcription agent", "speech to text workflow"],
+  "회의 요약": ["meeting summarization agent", "meeting notes AI", "action item extraction agent"],
+  "Notion 정리": ["notion mcp server", "notion integration agent", "notion meeting notes automation"],
   "도구 조합 추천": ["mcp agent workflow", "ai tool orchestration", "agent workflow builder"],
   "위험 신호 탐지": ["phishing detection AI", "scam message detection", "safety checker agent"],
   "공식 출처 확인": ["fact checking MCP server", "web search MCP server", "verification agent"],
@@ -132,7 +135,7 @@ function scoreRemoteCandidate(candidate) {
   return {
     ...candidate,
     trustScore: starsScore + freshnessScore + descriptionScore + capabilityScore + typeScore,
-    riskNote: "실시간 검색 후보입니다. 자동 실행하지 않고 사람이 확인한 뒤 Registry에 추가해야 합니다."
+    riskNote: "실시간 검색 후보입니다. 자동 실행하지 않고 사용 전 확인과 검증이 필요합니다."
   };
 }
 
@@ -142,7 +145,7 @@ function hasRelevantRepoText(candidate) {
 
 function isExecutableLookingCandidate(candidate) {
   const text = `${candidate.name} ${candidate.fullName} ${candidate.description}`.toLowerCase();
-  const executionWords = ["mcp", "agent", "api", "sdk", "tool", "server", "connector", "integration", "youtube", "sheets"];
+  const executionWords = ["mcp", "agent", "api", "sdk", "tool", "server", "connector", "integration", "youtube", "sheets", "notion", "transcription"];
   const moderationWords = ["comment moderation", "toxicity", "abusive comment", "youtube comment"];
   return executionWords.some((word) => text.includes(word)) || moderationWords.some((word) => text.includes(word));
 }
@@ -151,18 +154,12 @@ function isRequestSpecificCandidate(candidate, route) {
   const text = `${candidate.name} ${candidate.fullName} ${candidate.description}`.toLowerCase();
   const checks = [];
 
-  if (route.capabilities.includes("댓글 분석")) {
-    checks.push(text.includes("youtube") || text.includes("comment"));
-  }
-  if (route.capabilities.includes("악성 댓글 분류")) {
-    checks.push(text.includes("moderation") || text.includes("toxicity") || text.includes("abusive") || text.includes("comment"));
-  }
-  if (route.capabilities.includes("스프레드시트 저장")) {
-    checks.push(text.includes("sheet") || text.includes("spreadsheet") || text.includes("google"));
-  }
-  if (route.capabilities.includes("도구 조합 추천")) {
-    checks.push(text.includes("mcp") || text.includes("agent") || text.includes("workflow") || text.includes("connector") || text.includes("integration"));
-  }
+  if (route.capabilities.includes("댓글 분석")) checks.push(text.includes("youtube") || text.includes("comment"));
+  if (route.capabilities.includes("악성 댓글 분류")) checks.push(text.includes("moderation") || text.includes("toxicity") || text.includes("abusive") || text.includes("comment"));
+  if (route.capabilities.includes("스프레드시트 저장")) checks.push(text.includes("sheet") || text.includes("spreadsheet") || text.includes("google"));
+  if (route.capabilities.includes("회의 받아쓰기")) checks.push(text.includes("audio") || text.includes("transcription") || text.includes("speech"));
+  if (route.capabilities.includes("Notion 정리")) checks.push(text.includes("notion"));
+  if (route.capabilities.includes("도구 조합 추천")) checks.push(text.includes("mcp") || text.includes("agent") || text.includes("workflow") || text.includes("connector") || text.includes("integration"));
 
   if (route.capabilities.includes("댓글 분석")) {
     return text.includes("youtube") || text.includes("comment");
@@ -180,6 +177,9 @@ function capabilityKeywords(capability) {
     "댓글 분석": ["comment", "youtube", "social"],
     "악성 댓글 분류": ["toxicity", "moderation", "abusive", "hate", "comment"],
     "스프레드시트 저장": ["sheet", "spreadsheet", "google"],
+    "회의 받아쓰기": ["audio", "speech", "transcription"],
+    "회의 요약": ["meeting", "summary", "notes", "action item"],
+    "Notion 정리": ["notion"],
     "도구 조합 추천": ["mcp", "agent", "workflow", "orchestration", "tool"],
     "아이디어 생성": ["ideation", "brainstorm", "creative"],
     "아이디어 검증": ["validation", "startup", "market"],

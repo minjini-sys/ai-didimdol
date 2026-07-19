@@ -52,7 +52,7 @@
   {
     "id": "copywriter",
     "name": "Copywriter Agent",
-    "description": "동네 손님이 바로 이해할 수 있는 짧은 홍보 문구를 만듭니다.",
+    "description": "동네 손님이 바로 이해할 수 있는 홍보 문구를 만듭니다.",
     "capabilities": ["홍보 문구 생성"],
     "taskTypes": ["create"],
     "privacyRisk": "low",
@@ -73,10 +73,30 @@
     "id": "workflow-architect",
     "name": "Workflow Architect Agent",
     "description": "여러 도구를 어떤 순서로 연결할지 설계합니다.",
-    "capabilities": ["도구 조합 추천", "스프레드시트 저장"],
+    "capabilities": ["도구 조합 추천", "스프레드시트 저장", "Notion 정리", "회의 받아쓰기"],
     "taskTypes": ["plan", "connect"],
     "privacyRisk": "low",
     "verified": true,
     "trustScore": 87
+  },
+  {
+    "id": "meeting-scribe",
+    "name": "Meeting Scribe Agent",
+    "description": "회의 음성을 받아쓰기, 요약, 결정 사항, 할 일로 나눕니다.",
+    "capabilities": ["회의 받아쓰기", "회의 요약"],
+    "taskTypes": ["understand", "organize"],
+    "privacyRisk": "medium",
+    "verified": true,
+    "trustScore": 84
+  },
+  {
+    "id": "notion-organizer",
+    "name": "Notion Organizer Agent",
+    "description": "회의록을 Notion 페이지나 데이터베이스에 맞는 형식으로 정리합니다.",
+    "capabilities": ["Notion 정리"],
+    "taskTypes": ["connect", "organize"],
+    "privacyRisk": "medium",
+    "verified": true,
+    "trustScore": 82
   }
 ]

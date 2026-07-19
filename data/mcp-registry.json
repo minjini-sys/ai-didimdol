@@ -30,6 +30,26 @@
     "trustScore": 84
   },
   {
+    "id": "notion",
+    "name": "Notion MCP",
+    "description": "회의록, 요약, 할 일을 Notion 페이지나 데이터베이스에 저장합니다.",
+    "capabilities": ["Notion 정리", "도구 조합 추천"],
+    "taskTypes": ["connect", "organize"],
+    "privacyRisk": "medium",
+    "verified": true,
+    "trustScore": 82
+  },
+  {
+    "id": "audio-transcription",
+    "name": "Audio Transcription MCP",
+    "description": "녹음 파일이나 회의 음성을 전사 모델에 보내 텍스트로 바꾸는 연결 도구입니다.",
+    "capabilities": ["회의 받아쓰기", "도구 조합 추천"],
+    "taskTypes": ["connect", "organize"],
+    "privacyRisk": "high",
+    "verified": true,
+    "trustScore": 78
+  },
+  {
     "id": "file-reader",
     "name": "File Reader MCP",
     "description": "첨부 문서, 안내문, 신청서를 읽고 요약합니다.",

@@ -7,6 +7,8 @@ const registryPaths = {
   agents: "data/agent-registry.json"
 };
 
+const broadCapabilities = new Set(["다음 행동 안내", "문서 작성", "일정 관리", "결과물 생성"]);
+
 export async function loadRegistries() {
   const [skills, mcps, agents] = await Promise.all([
     readJson(registryPaths.skills),
@@ -42,7 +44,6 @@ function rank(items, route) {
 }
 
 function scoreItem(item, route) {
-  const broadCapabilities = new Set(["다음 행동 안내", "문서 작성", "일정 관리"]);
   const specificRouteCapabilities = route.capabilities.filter((capability) => !broadCapabilities.has(capability));
   const hasSpecificMatch =
     specificRouteCapabilities.length === 0 ||

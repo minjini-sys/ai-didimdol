@@ -136,7 +136,8 @@ function routerPrompt(input, fallback) {
     "taskTypes는 understand, verify, create, compare, plan, learn, organize, connect 중 하나 이상입니다.",
     "riskLevel은 low, medium, high, blocked 중 하나입니다.",
     "supported는 supported, partial, unsupported 중 하나입니다.",
-    "capabilities는 사용자가 원하는 최종 결과를 만드는 능력명을 한국어 배열로 작성하세요.",
+    "capabilities는 사용자가 원하는 최종 결과를 만들 능력명을 한국어 배열로 작성하세요.",
+    "가능하면 다음 능력명 중에서 고르세요: 쉬운 말 변환, 위험 신호 탐지, 공식 출처 확인, 개인정보 보호, 다음 행동 안내, 아이디어 생성, 아이디어 검증, 홍보 문구 생성, 실행 계획 생성, 댓글 분석, 악성 댓글 분류, 스프레드시트 저장, 회의 받아쓰기, 회의 요약, Notion 정리, 도구 조합 추천, 문서 작성, 일정 관리, 저장소 관리.",
     "반드시 JSON만 출력하세요.",
     `Fallback example: ${JSON.stringify(fallback)}`,
     `Input: ${input}`
