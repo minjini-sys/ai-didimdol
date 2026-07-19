@@ -66,6 +66,7 @@ test("selection step keeps risk wording internal and uses verdict instead", asyn
   assert.ok(result.userView.candidates[0].verdict.label);
   assert.equal(viewText.includes(`위험${"도:"}`), false);
   assert.equal(viewText.includes(`확인 ${"필요"}`), false);
+  assert.equal(viewText.includes(`검토 ${"필요"}`), false);
 });
 
 test("blocked candidates cannot be approved or downloaded", async (t) => {
@@ -145,7 +146,7 @@ test("approval does not store the skill locally in this step", async () => {
     fullName: "example/comment-moderation-agent",
     plainTitle: "댓글을 분류하거나 문제 댓글을 찾는 도구 후보",
     plainSummary: "댓글을 읽고 유형별로 나누는 데 쓰일 수 있는 후보입니다.",
-    verdict: { label: "검토 추천", reason: "다음 단계에서 읽어볼 만합니다." },
+    verdict: { label: "추천 후보", reason: "다음 단계에서 읽어볼 만합니다." },
     precheckLevel: "ok",
     canApprove: true,
     url: "https://github.com/example/comment-moderation-agent"
@@ -173,7 +174,7 @@ test("approval can include multiple selected skills", async () => {
       fullName: "example/comment-moderation-agent",
       plainTitle: "댓글을 분류하거나 문제 댓글을 찾는 도구 후보",
       plainSummary: "댓글을 읽고 유형별로 나누는 데 쓰일 수 있는 후보입니다.",
-      verdict: { label: "검토 추천", reason: "다음 단계에서 읽어볼 만합니다." },
+      verdict: { label: "추천 후보", reason: "다음 단계에서 읽어볼 만합니다." },
       precheckLevel: "ok",
       canApprove: true,
       url: "https://github.com/example/comment-moderation-agent"
@@ -184,7 +185,7 @@ test("approval can include multiple selected skills", async () => {
       fullName: "example/classification-workflow",
       plainTitle: "분류 기준을 잡아주는 도구 후보",
       plainSummary: "여러 문장을 기준별로 나누는 데 쓰일 수 있는 후보입니다.",
-      verdict: { label: "검토 필요", reason: "파일 내용을 한 번 더 확인합니다." },
+      verdict: { label: "관련 후보", reason: "파일 내용을 한 번 더 확인합니다." },
       precheckLevel: "review",
       canApprove: true,
       url: "https://github.com/example/classification-workflow"

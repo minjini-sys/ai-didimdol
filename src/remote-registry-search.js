@@ -208,13 +208,13 @@ function buildVerdict(candidate, safety) {
   }
   if (safety.level === "review") {
     return {
-      label: "검토 필요",
+      label: "관련 후보",
       reason: "요청과 관련은 있어 보입니다. 승인하면 파일 내용을 임시로 읽고 실제로 써도 되는지 한 번 더 확인합니다."
     };
   }
   if (candidate.score >= 70) {
     return {
-      label: "검토 추천",
+      label: "추천 후보",
       reason: "요청과 관련된 단어가 많고 큰 권한 표현이 없어 다음 단계에서 내용을 읽어볼 만합니다."
     };
   }
@@ -253,8 +253,8 @@ function scoreCandidate(candidate) {
 }
 
 function verdictRank(candidate) {
-  if (candidate.verdict?.label === "검토 추천") return 0;
-  if (candidate.verdict?.label === "검토 필요") return 1;
+  if (candidate.verdict?.label === "추천 후보") return 0;
+  if (candidate.verdict?.label === "관련 후보") return 1;
   if (candidate.verdict?.label === "약한 후보") return 2;
   return 3;
 }

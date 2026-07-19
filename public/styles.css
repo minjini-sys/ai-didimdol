@@ -148,6 +148,10 @@ textarea {
   line-height: 1.6;
 }
 
+.next-action {
+  margin-top: 14px;
+}
+
 .tag-row,
 .query-list,
 .candidate-meta {

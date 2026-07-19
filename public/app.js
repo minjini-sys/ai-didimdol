@@ -54,6 +54,31 @@ function toggleSkillApproval(candidateId) {
   renderSkillApproval(lastSkillApprovalView || currentApprovalView());
 }
 
+async function proceedWithApprovedSkills() {
+  const approvedIds = [...approvedSkillIds];
+  if (!approvedIds.length) return;
+
+  setLoading("선택한 Skill을 다음 단계에서 확인할 준비를 하고 있습니다.");
+
+  const response = await fetch("/api/route", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      input: lastInput,
+      approvedSkillIds: approvedIds,
+      candidates: lastCandidates
+    })
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    renderError(data.error || "다음 단계로 넘어가는 중 문제가 생겼습니다.");
+    return;
+  }
+
+  render(data.userView);
+}
+
 function setLoading(message) {
   resultBody.innerHTML = `<p class="empty">${escapeHtml(message)}</p>`;
 }
@@ -86,6 +111,7 @@ function renderSkillApproval(view) {
         <h2>${selected.length}개를 임시 확인 대상으로 골랐습니다</h2>
         <p>아직 다운로드하거나 로컬에 저장하지 않았습니다. 원하면 각 후보에서 승인 취소를 누를 수 있습니다.</p>
         <ul>${selected.map((candidate) => `<li>${escapeHtml(candidate.plainTitle || candidate.name)}</li>`).join("")}</ul>
+        <button type="button" class="primary-action next-action" data-proceed-skills>다음 단계로</button>
       </section>`
     : "";
 
@@ -113,6 +139,7 @@ function renderSkillApproval(view) {
   document.querySelectorAll("[data-toggle-skill]").forEach((button) => {
     button.addEventListener("click", () => toggleSkillApproval(button.dataset.toggleSkill));
   });
+  document.querySelector("[data-proceed-skills]")?.addEventListener("click", proceedWithApprovedSkills);
 }
 
 function renderCandidateCard(candidate) {
@@ -133,7 +160,7 @@ function renderCandidateCard(candidate) {
   return `
     <article class="candidate-card">
       <div class="candidate-head">
-        <span class="verdict ${verdictClass(candidate.verdict?.label)}">${escapeHtml(candidate.verdict?.label || "검토 필요")}</span>
+        <span class="verdict ${verdictClass(candidate.verdict?.label)}">${escapeHtml(displayVerdictLabel(candidate.verdict?.label))}</span>
         ${approvedBadge}
       </div>
       <h3>${escapeHtml(candidate.plainTitle || candidate.name)}</h3>
@@ -186,7 +213,7 @@ function renderApproved(view) {
     <div class="candidate-list">
       ${approved.map((candidate) => `
         <article class="candidate-card">
-          <span class="verdict ${verdictClass(candidate.verdict?.label)}">${escapeHtml(candidate.verdict?.label || "검토 필요")}</span>
+          <span class="verdict ${verdictClass(candidate.verdict?.label)}">${escapeHtml(displayVerdictLabel(candidate.verdict?.label))}</span>
           <h3>${escapeHtml(candidate.plainTitle || candidate.name)}</h3>
           <p>${escapeHtml(candidate.plainSummary || "")}</p>
           <div class="source-line">
@@ -200,10 +227,14 @@ function renderApproved(view) {
 }
 
 function verdictClass(label) {
-  if (label === "검토 추천") return "good";
+  if (label === "추천 후보") return "good";
   if (label === "다운로드 차단") return "block";
-  if (label === "검토 필요") return "hold";
+  if (label === "관련 후보") return "hold";
   return "weak";
+}
+
+function displayVerdictLabel(label) {
+  return label || "후보";
 }
 
 function renderError(message) {
