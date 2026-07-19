@@ -158,6 +158,41 @@ textarea {
   gap: 14px;
 }
 
+.candidate-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.verdict,
+.risk {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.verdict.good {
+  border-color: #9bc8b9;
+  background: #eef8f4;
+  color: #176250;
+}
+
+.verdict.hold {
+  border-color: #e6b9ad;
+  background: #fff4f1;
+  color: var(--danger);
+}
+
+.verdict.weak {
+  background: var(--soft);
+  color: var(--muted);
+}
+
 .candidate-card h3 {
   margin-bottom: 8px;
   font-size: 1.2rem;
@@ -169,8 +204,47 @@ textarea {
   overflow-wrap: anywhere;
 }
 
-.why {
-  margin-top: 10px;
+.plain-summary {
+  font-size: 1.04rem;
+}
+
+.explain-block {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--white);
+}
+
+.explain-block h4 {
+  margin: 0 0 8px;
+  font-size: 0.98rem;
+}
+
+.explain-block ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.explain-block li {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.explain-block.caution {
+  background: #fffaf8;
+}
+
+.verdict-reason {
+  margin-bottom: 0;
+  font-weight: 700;
+}
+
+.source-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.94rem;
 }
 
 .approval-box {

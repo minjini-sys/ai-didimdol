@@ -1,5 +1,11 @@
 const intentRules = [
   {
+    id: "document-requirement-extraction",
+    label: "문서 읽기와 핵심 조건 정리",
+    keywords: ["공모전", "안내문", "조건", "제출물", "문서", "핵심", "요약", "정리"],
+    searchTerms: ["document summarization skill", "requirement extraction agent", "checklist generation prompt"]
+  },
+  {
     id: "comment-moderation",
     label: "댓글 분석과 악성 댓글 분류",
     keywords: ["유튜브 댓글", "youtube comment", "댓글", "악성 댓글", "욕설", "혐오", "moderation"],
@@ -26,8 +32,8 @@ const intentRules = [
   {
     id: "analyze-and-classify",
     label: "분석과 분류",
-    keywords: ["분석", "분류", "댓글", "악성", "데이터", "비교", "평가"],
-    searchTerms: ["comment moderation skill", "classification agent", "data analysis agent"]
+    keywords: ["분석", "분류", "데이터", "비교", "평가"],
+    searchTerms: ["classification agent", "data analysis agent", "analysis workflow skill"]
   },
   {
     id: "learn-and-explain",
@@ -46,10 +52,7 @@ export async function routeInput(input, llm) {
 export function fallbackRoute(input) {
   const text = input.toLowerCase();
   const matched = intentRules
-    .map((rule) => ({
-      ...rule,
-      score: scoreRule(rule, text)
-    }))
+    .map((rule) => ({ ...rule, score: scoreRule(rule, text) }))
     .filter((rule) => rule.score > 0)
     .sort((a, b) => b.score - a.score);
 
@@ -68,8 +71,15 @@ export function fallbackRoute(input) {
 }
 
 function scoreRule(rule, text) {
-  const keywordScore = rule.keywords.reduce((sum, keyword) => sum + (text.includes(keyword.toLowerCase()) ? 1 : 0), 0);
-  if (rule.id === "comment-moderation" && (text.includes("댓글") || text.includes("comment"))) return keywordScore + 5;
+  const keywordScore = rule.keywords.reduce((sum, keyword) => {
+    return sum + (text.includes(keyword.toLowerCase()) ? 1 : 0);
+  }, 0);
+  if (rule.id === "comment-moderation" && (text.includes("댓글") || text.includes("comment"))) {
+    return keywordScore + 5;
+  }
+  if (rule.id === "document-requirement-extraction" && (text.includes("공모전") || text.includes("안내문") || text.includes("제출물"))) {
+    return keywordScore + 5;
+  }
   return keywordScore;
 }
 

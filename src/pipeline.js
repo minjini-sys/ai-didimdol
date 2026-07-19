@@ -71,7 +71,7 @@ function buildApprovedView(input, route, approvedSkillIds, candidates) {
         model: route.model
       },
       approved,
-      message: "아직 이 단계에서는 로컬에 저장하지 않았습니다. 다음 단계에서 승인한 Skill을 임시로 읽어 더 좋은 답변을 만들 수 있습니다."
+      message: "아직 이 단계에서는 로컬에 저장하지 않았습니다. 다음 단계에서 승인한 Skill을 임시로 읽고, 안전성을 확인한 뒤 더 좋은 답변을 만들 수 있습니다."
     }
   };
 }

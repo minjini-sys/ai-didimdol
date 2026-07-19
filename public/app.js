@@ -100,11 +100,8 @@ function renderSkillApproval(view) {
 
     <section class="search-panel">
       <p class="step-label">2. 인터넷 Skill 검색</p>
-      <h2>이 의도에 맞는 Skill 후보입니다</h2>
+      <h2>찾은 후보를 쉬운 말로 풀어봤습니다</h2>
       <p>아래 후보는 GitHub에서 실시간으로 찾았습니다. 아직 다운로드하지 않았고, 로컬에도 저장하지 않았습니다.</p>
-      <div class="query-list">
-        ${(view.search.queries || []).map((query) => `<span>${escapeHtml(query.replace(" in:name,description,readme", ""))}</span>`).join("")}
-      </div>
     </section>
 
     <div class="candidate-list">${candidates}</div>
@@ -118,18 +115,38 @@ function renderSkillApproval(view) {
 function renderCandidateCard(candidate) {
   return `
     <article class="candidate-card">
-      <div>
-        <h3>${escapeHtml(candidate.name)}</h3>
-        <p>${escapeHtml(candidate.description)}</p>
-        <p class="why">${escapeHtml(candidate.whyMatched)}</p>
+      <div class="candidate-head">
+        <span class="verdict ${verdictClass(candidate.verdict?.label)}">${escapeHtml(candidate.verdict?.label || "검토 필요")}</span>
+        <span class="risk">위험도: ${escapeHtml(candidate.riskLevel || "확인 필요")}</span>
+      </div>
+      <h3>${escapeHtml(candidate.plainTitle || candidate.name)}</h3>
+      <p class="plain-summary">${escapeHtml(candidate.plainSummary || "이 후보가 어떤 일을 하는지 추가 확인이 필요합니다.")}</p>
+
+      <section class="explain-block">
+        <h4>무엇을 도와줄 수 있나요?</h4>
+        <ul>${(candidate.helpsWith || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      </section>
+
+      <section class="explain-block">
+        <h4>왜 후보로 골랐나요?</h4>
+        <p>${escapeHtml(candidate.intentFit || "")}</p>
+      </section>
+
+      <section class="explain-block caution">
+        <h4>사용 전에 조심할 점</h4>
+        <ul>${(candidate.caution || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      </section>
+
+      <p class="verdict-reason">${escapeHtml(candidate.verdict?.reason || "")}</p>
+
+      <div class="source-line">
+        <span>출처</span>
         <a href="${escapeHtml(candidate.url)}" target="_blank" rel="noreferrer">${escapeHtml(candidate.fullName)}</a>
+        <span>별 ${Number(candidate.stars || 0).toLocaleString("ko-KR")}</span>
       </div>
-      <div class="candidate-meta">
-        <span>★ ${Number(candidate.stars || 0).toLocaleString("ko-KR")}</span>
-        <span>점수 ${candidate.score}</span>
-      </div>
+
       <div class="approval-box">
-        <p>이 Skill 후보를 내려받아 임시로 확인해도 될까요?</p>
+        <p>이 후보를 다음 단계에서 임시로 읽어봐도 될까요?</p>
         <p class="privacy-note">승인 전에는 다운로드하지 않습니다. 승인해도 이 단계에서는 로컬에 저장하지 않습니다.</p>
         <button type="button" class="primary-action" data-approve-skill="${escapeHtml(candidate.id)}">승인하기</button>
       </div>
@@ -148,13 +165,23 @@ function renderApproved(view) {
     <div class="candidate-list">
       ${approved.map((candidate) => `
         <article class="candidate-card">
-          <h3>${escapeHtml(candidate.name)}</h3>
-          <p>${escapeHtml(candidate.description)}</p>
-          <a href="${escapeHtml(candidate.url)}" target="_blank" rel="noreferrer">${escapeHtml(candidate.fullName)}</a>
+          <span class="verdict ${verdictClass(candidate.verdict?.label)}">${escapeHtml(candidate.verdict?.label || "검토 필요")}</span>
+          <h3>${escapeHtml(candidate.plainTitle || candidate.name)}</h3>
+          <p>${escapeHtml(candidate.plainSummary || "")}</p>
+          <div class="source-line">
+            <span>출처</span>
+            <a href="${escapeHtml(candidate.url)}" target="_blank" rel="noreferrer">${escapeHtml(candidate.fullName)}</a>
+          </div>
         </article>
       `).join("")}
     </div>
   `;
+}
+
+function verdictClass(label) {
+  if (label === "검토 추천") return "good";
+  if (label === "추천 보류") return "hold";
+  return "weak";
 }
 
 function renderError(message) {
