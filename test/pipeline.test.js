@@ -184,7 +184,22 @@ test("routes contest notices to document requirement extraction", async (t) => {
   assert.ok(candidate.helpsWith.some((item) => item.includes("제출물") || item.includes("조건")));
 });
 
-test("approval does not store the skill locally in this step", async () => {
+test("approval reads candidate files temporarily and builds a review", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+  globalThis.fetch = async (url) => {
+    const target = String(url);
+    if (target === "https://api.github.com/repos/example/comment-moderation-agent") {
+      return { ok: true, async json() { return { default_branch: "main" }; } };
+    }
+    if (target.endsWith("/main/README.md")) {
+      return { ok: true, async text() { return "Comment moderation skill. Classify comments and detect toxicity."; } };
+    }
+    return { ok: false, async text() { return ""; } };
+  };
+
   const candidate = {
     id: "github:example/comment-moderation-agent",
     name: "comment-moderation-agent",
@@ -206,12 +221,32 @@ test("approval does not store the skill locally in this step", async () => {
     }
   );
 
-  assert.equal(result.userView.mode, "approved");
-  assert.equal(result.userView.approved.length, 1);
-  assert.ok(result.userView.message.includes("로컬에 저장하지 않았습니다"));
+  assert.equal(result.userView.mode, "skill-review");
+  assert.equal(result.userView.inspected.length, 1);
+  assert.equal(result.userView.inspected[0].decision, "사용 가능");
+  assert.deepEqual(result.userView.inspected[0].checkedFiles, ["README.md"]);
+  assert.ok(result.userView.result.body.includes("사용자 요청"));
 });
 
-test("approval can include multiple selected skills", async () => {
+test("approval can inspect multiple selected skills", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+  globalThis.fetch = async (url) => {
+    const target = String(url);
+    if (target.startsWith("https://api.github.com/repos/example/")) {
+      return { ok: true, async json() { return { default_branch: "main" }; } };
+    }
+    if (target.includes("/comment-moderation-agent/") && target.endsWith("/README.md")) {
+      return { ok: true, async text() { return "Comment moderation and classification workflow."; } };
+    }
+    if (target.includes("/classification-workflow/") && target.endsWith("/README.md")) {
+      return { ok: true, async text() { return "Classification workflow for analysis tasks."; } };
+    }
+    return { ok: false, async text() { return ""; } };
+  };
+
   const candidates = [
     {
       id: "github:example/comment-moderation-agent",
@@ -246,7 +281,7 @@ test("approval can include multiple selected skills", async () => {
     }
   );
 
-  assert.equal(result.userView.mode, "approved");
-  assert.equal(result.userView.approved.length, 2);
-  assert.deepEqual(result.userView.approved.map((candidate) => candidate.id), candidates.map((candidate) => candidate.id));
+  assert.equal(result.userView.mode, "skill-review");
+  assert.equal(result.userView.inspected.length, 2);
+  assert.deepEqual(result.userView.inspected.map((candidate) => candidate.id), candidates.map((candidate) => candidate.id));
 });

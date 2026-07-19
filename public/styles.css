@@ -122,6 +122,7 @@ textarea {
 .intent-panel,
 .search-panel,
 .selected-panel,
+.result-panel,
 .candidate-card {
   padding: 18px;
   border: 1px solid var(--line);
@@ -168,6 +169,22 @@ textarea {
   margin: 0;
   padding-left: 20px;
   color: var(--muted);
+  line-height: 1.65;
+}
+
+.result-panel {
+  border-left: 5px solid var(--accent);
+}
+
+.result-panel pre {
+  margin: 0;
+  padding: 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  color: var(--ink);
+  font: inherit;
   line-height: 1.65;
 }
 

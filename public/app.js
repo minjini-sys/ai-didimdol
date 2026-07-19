@@ -6,7 +6,6 @@ let lastCandidates = [];
 let lastInput = "";
 let approvedSkillIds = new Set();
 let lastSkillApprovalView = null;
-let nextStepReady = false;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -14,7 +13,6 @@ form.addEventListener("submit", async (event) => {
   if (!value) return;
   lastInput = value;
   approvedSkillIds = new Set();
-  nextStepReady = false;
   await submitPrompt(value);
 });
 
@@ -52,16 +50,33 @@ function toggleSkillApproval(candidateId) {
   } else {
     approvedSkillIds.add(candidateId);
   }
-  nextStepReady = false;
 
   renderSkillApproval(lastSkillApprovalView || currentApprovalView());
 }
 
-function proceedWithApprovedSkills() {
-  if (!approvedSkillIds.size) return;
+async function proceedWithApprovedSkills() {
+  const approvedIds = [...approvedSkillIds];
+  if (!approvedIds.length) return;
 
-  nextStepReady = true;
-  renderSkillApproval(lastSkillApprovalView || currentApprovalView());
+  setLoading("선택한 Skill 파일을 임시로 읽고 있습니다. 로컬에는 저장하지 않습니다.");
+
+  const response = await fetch("/api/route", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      input: lastInput,
+      approvedSkillIds: approvedIds,
+      candidates: lastCandidates
+    })
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    renderError(data.error || "Skill 확인 중 문제가 생겼습니다.");
+    return;
+  }
+
+  render(data.userView);
 }
 
 function setLoading(message) {
@@ -71,6 +86,11 @@ function setLoading(message) {
 function render(view) {
   if (view.mode === "skill-approval") {
     renderSkillApproval(view);
+    return;
+  }
+
+  if (view.mode === "skill-review") {
+    renderSkillReview(view);
     return;
   }
 
@@ -91,8 +111,7 @@ function renderSkillApproval(view) {
         <h2>${selected.length}개를 임시 확인 대상으로 골랐습니다</h2>
         <p>아직 다운로드하거나 로컬에 저장하지 않았습니다. 원하면 각 후보에서 승인 취소를 누를 수 있습니다.</p>
         <ul>${selected.map((candidate) => `<li>${escapeHtml(candidate.plainTitle || candidate.name)}</li>`).join("")}</ul>
-        ${nextStepReady ? renderNextStepTodo() : ""}
-        ${nextStepReady ? "" : `<button type="button" class="primary-action next-action" data-proceed-skills>다음 단계로</button>`}
+        <button type="button" class="primary-action next-action" data-proceed-skills>다음 단계로</button>
       </section>`
     : "";
 
@@ -121,20 +140,6 @@ function renderSkillApproval(view) {
     button.addEventListener("click", () => toggleSkillApproval(button.dataset.toggleSkill));
   });
   document.querySelector("[data-proceed-skills]")?.addEventListener("click", proceedWithApprovedSkills);
-}
-
-function renderNextStepTodo() {
-  return `
-    <div class="next-step-box">
-      <h3>다음에 만들어야 할 기능</h3>
-      <ol>
-        <li>선택한 GitHub 후보의 파일을 임시로 읽습니다.</li>
-        <li>Skill 내용에 위험한 지시나 과한 권한 요구가 있는지 확인합니다.</li>
-        <li>요청에 실제로 도움이 되는 Skill만 최종 사용 대상으로 남깁니다.</li>
-        <li>남은 Skill을 바탕으로 사용자가 바로 쓸 수 있는 결과물을 만듭니다.</li>
-      </ol>
-    </div>
-  `;
 }
 
 function renderCandidateCard(candidate) {
@@ -185,6 +190,61 @@ function renderCandidateCard(candidate) {
   `;
 }
 
+function renderSkillReview(view) {
+  const inspected = view.inspected || [];
+  const result = view.result || {};
+  resultBody.innerHTML = `
+    <section class="search-panel">
+      <p class="step-label">3. Skill 임시 확인</p>
+      <h2>${escapeHtml(view.title || "Skill 내용을 확인했습니다")}</h2>
+      <p>${escapeHtml(view.summary || "")}</p>
+      <p>읽은 파일은 분석에만 사용했고, 로컬에 저장하지 않았습니다.</p>
+    </section>
+
+    <div class="candidate-list">
+      ${inspected.map(renderInspectedSkill).join("")}
+    </div>
+
+    <section class="result-panel">
+      <p class="step-label">4. 결과물</p>
+      <h2>${escapeHtml(result.title || "바로 쓸 결과물")}</h2>
+      <pre>${escapeHtml(result.body || "사용 가능한 Skill을 찾지 못했습니다.")}</pre>
+    </section>
+  `;
+}
+
+function renderInspectedSkill(candidate) {
+  const files = candidate.checkedFiles?.length ? candidate.checkedFiles.join(", ") : "읽은 파일 없음";
+  const flags = candidate.flags?.length
+    ? `<ul>${candidate.flags.map((flag) => `<li>${escapeHtml(flag)}</li>`).join("")}</ul>`
+    : "<p>큰 문제 신호는 보이지 않았습니다.</p>";
+  return `
+    <article class="candidate-card">
+      <div class="candidate-head">
+        <span class="verdict ${decisionClass(candidate.decision)}">${escapeHtml(candidate.decision || "보류")}</span>
+      </div>
+      <h3>${escapeHtml(candidate.plainTitle || candidate.name)}</h3>
+      <p>${escapeHtml(candidate.reason || "")}</p>
+      <section class="explain-block">
+        <h4>임시로 읽은 파일</h4>
+        <p>${escapeHtml(files)}</p>
+      </section>
+      <section class="explain-block">
+        <h4>확인한 내용</h4>
+        <p>${escapeHtml(candidate.evidence || "")}</p>
+      </section>
+      <section class="explain-block">
+        <h4>주의할 점</h4>
+        ${flags}
+      </section>
+      <div class="source-line">
+        <span>출처</span>
+        <a href="${escapeHtml(candidate.url)}" target="_blank" rel="noreferrer">${escapeHtml(candidate.fullName)}</a>
+      </div>
+    </article>
+  `;
+}
+
 function currentApprovalView() {
   return {
     mode: "skill-approval",
@@ -203,6 +263,12 @@ function verdictClass(label) {
   if (label === "다운로드 차단") return "block";
   if (label === "관련 후보") return "hold";
   return "weak";
+}
+
+function decisionClass(label) {
+  if (label === "사용 가능") return "good";
+  if (label === "사용 보류") return "block";
+  return "hold";
 }
 
 function displayVerdictLabel(label) {

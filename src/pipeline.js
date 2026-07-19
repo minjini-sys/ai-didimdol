@@ -1,13 +1,14 @@
 import { createLlmProvider } from "./llm-provider.js";
 import { routeInput } from "./router.js";
 import { searchRemoteSkills } from "./remote-registry-search.js";
+import { inspectApprovedSkills } from "./skill-inspector.js";
 
 export async function runDidimdolPipeline(input, config, options = {}) {
   const llm = createLlmProvider(config);
   const route = await routeInput(input, llm);
 
   if (options.approvedSkillIds?.length) {
-    return buildApprovedView(input, route, options.approvedSkillIds, options.candidates || []);
+    return buildApprovedView(input, route, options.approvedSkillIds, options.candidates || [], config, llm);
   }
 
   const skillSearch = await searchRemoteSkills(route, {
@@ -55,24 +56,13 @@ function buildSkillApprovalView(route, skillSearch) {
   };
 }
 
-function buildApprovedView(input, route, approvedSkillIds, candidates) {
+async function buildApprovedView(input, route, approvedSkillIds, candidates, config, llm) {
   const approved = candidates.filter((candidate) => approvedSkillIds.includes(candidate.id));
+  const review = await inspectApprovedSkills(input, route, approved, config, llm);
   return {
     input,
     route,
     skillSearch: { source: "github", searchedQueries: route.searchTerms || [], candidates },
-    userView: {
-      mode: "approved",
-      title: "다음 단계 준비",
-      intent: {
-        label: route.intentLabel,
-        summary: route.intent,
-        needs: route.detectedNeeds,
-        confidence: route.confidence,
-        model: route.model
-      },
-      approved,
-      message: "아직 이 단계에서는 로컬에 저장하지 않았습니다. 다음 단계에서 승인한 Skill을 임시로 읽고, 안전성을 확인한 뒤 더 좋은 답변을 만들 수 있습니다."
-    }
+    userView: review
   };
 }

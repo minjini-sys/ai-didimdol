@@ -10,6 +10,9 @@ function fallbackProvider() {
     name: "fallback",
     async classify(_input, fallback) {
       return fallback;
+    },
+    async createResult(input, route, usableSkills) {
+      return fallbackResult(input, route, usableSkills);
     }
   };
 }
@@ -30,6 +33,13 @@ function openaiProvider(config) {
         return normalizeSkillExplanations(await callOpenAi(config, skillExplanationPrompt(route, candidates)));
       } catch {
         return [];
+      }
+    },
+    async createResult(input, route, usableSkills) {
+      try {
+        return normalizeResult(await callOpenAi(config, resultPrompt(input, route, usableSkills)));
+      } catch {
+        return fallbackResult(input, route, usableSkills);
       }
     }
   };
@@ -52,6 +62,13 @@ function geminiProvider(config) {
       } catch {
         return [];
       }
+    },
+    async createResult(input, route, usableSkills) {
+      try {
+        return normalizeResult(await callGemini(config, resultPrompt(input, route, usableSkills)));
+      } catch {
+        return fallbackResult(input, route, usableSkills);
+      }
     }
   };
 }
@@ -72,6 +89,13 @@ function ollamaProvider(config) {
         return normalizeSkillExplanations(await callOllama(config, skillExplanationPrompt(route, candidates)));
       } catch {
         return [];
+      }
+    },
+    async createResult(input, route, usableSkills) {
+      try {
+        return normalizeResult(await callOllama(config, resultPrompt(input, route, usableSkills)));
+      } catch {
+        return fallbackResult(input, route, usableSkills);
       }
     }
   };
@@ -174,6 +198,51 @@ function normalizeSkillExplanations(text) {
       helpsWith: Array.isArray(item.helpsWith) ? item.helpsWith.filter((value) => typeof value === "string") : [],
       intentFit: typeof item.intentFit === "string" ? item.intentFit : ""
     }));
+}
+
+function resultPrompt(input, route, usableSkills) {
+  const skillEvidence = usableSkills.map((skill) => ({
+    name: skill.plainTitle || skill.name,
+    source: skill.fullName,
+    checkedFiles: skill.checkedFiles,
+    evidence: skill.evidence
+  }));
+
+  return [
+    "사용자가 바로 복사해서 쓸 수 있는 한국어 결과물을 만드세요.",
+    "비전공자를 돕는 서비스입니다. 절차 설명보다 결과물을 먼저 주세요.",
+    "선택된 Skill의 확인 결과를 참고하되, 출처에 없는 기능은 지어내지 마세요.",
+    "반드시 JSON만 출력하세요.",
+    "필드: title, body",
+    "body는 마크다운 문자열입니다.",
+    `사용자 요청: ${input}`,
+    `의도: ${route.intentLabel}`,
+    `확인된 Skill: ${JSON.stringify(skillEvidence)}`
+  ].join("\n");
+}
+
+function normalizeResult(text) {
+  const parsed = safeJson(text);
+  if (!parsed || typeof parsed !== "object") return null;
+  return {
+    title: typeof parsed.title === "string" ? parsed.title : "바로 쓸 결과물",
+    body: typeof parsed.body === "string" ? parsed.body : ""
+  };
+}
+
+function fallbackResult(input, route, usableSkills) {
+  return {
+    title: "바로 쓸 초안",
+    body: [
+      `${route.intentLabel} 요청을 처리하기 위해 ${usableSkills.length}개 Skill 후보를 참고했습니다.`,
+      "",
+      "1. 원문에서 핵심 조건, 대상, 제출물, 마감일을 분리합니다.",
+      "2. 빠진 정보가 있으면 사용자에게 짧게 질문합니다.",
+      "3. 확인된 조건을 체크리스트와 제출 준비 목록으로 정리합니다.",
+      "",
+      `사용자 요청: ${input}`
+    ].join("\n")
+  };
 }
 
 function safeJson(text) {
