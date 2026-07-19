@@ -26,8 +26,8 @@ export function fallbackRoute(input) {
     .filter((rule) => includesAny(text, rule.keywords))
     .map((rule) => rule.capability);
 
-  const defaults = matchedTaskTypes.length > 0 ? matchedTaskTypes : ["understand"];
-  const defaultCapabilities = capabilities.length > 0 ? capabilities : ["쉬운 말 변환", "다음 행동 안내"];
+  const defaults = matchedTaskTypes.length > 0 ? matchedTaskTypes : ["create"];
+  const defaultCapabilities = capabilities.length > 0 ? capabilities : ["결과물 생성", "다음 행동 안내"];
 
   return {
     intent: summarizeIntent(input),

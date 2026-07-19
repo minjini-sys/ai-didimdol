@@ -3,6 +3,10 @@ const capabilityQueries = {
   "아이디어 검증": ["startup validation agent", "market validation prompt", "idea validation AI"],
   "홍보 문구 생성": ["marketing copywriting prompt", "small business marketing AI", "copywriting agent"],
   "실행 계획 생성": ["planning agent workflow", "action plan generator AI", "weekly planning prompt"],
+  "댓글 분석": ["youtube comment analysis tool", "comment analysis agent", "social media comment analysis"],
+  "악성 댓글 분류": ["toxicity classification tool", "comment moderation agent", "abusive comment detection"],
+  "스프레드시트 저장": ["google sheets mcp server", "spreadsheet automation agent", "google sheets api tool"],
+  "도구 조합 추천": ["mcp agent workflow", "ai tool orchestration", "agent workflow builder"],
   "위험 신호 탐지": ["phishing detection AI", "scam message detection", "safety checker agent"],
   "공식 출처 확인": ["fact checking MCP server", "web search MCP server", "verification agent"],
   "쉬운 말 변환": ["plain language AI", "simplify text prompt", "accessibility writing AI"],
@@ -33,7 +37,11 @@ export async function searchRemoteRegistry(route, config = {}) {
   }
 
   const candidates = dedupeByUrl(results)
+    .filter(hasRelevantRepoText)
+    .filter((candidate) => isRequestSpecificCandidate(candidate, route))
+    .filter(isExecutableLookingCandidate)
     .map(scoreRemoteCandidate)
+    .filter((candidate) => !isGenericList(candidate))
     .filter((candidate) => candidate.trustScore >= config.dynamicRegistryMinTrust)
     .sort((a, b) => b.trustScore - a.trustScore || b.stars - a.stars)
     .slice(0, config.dynamicRegistryLimit);
@@ -54,7 +62,7 @@ function buildQueries(route) {
   for (const taskType of route.taskTypes) {
     queries.push(...(taskQueries[taskType] || []));
   }
-  return [...new Set(queries)].map((query) => `${query} in:name,description,readme`);
+  return [...new Set(queries)].map((query) => `${query} in:name,description`);
 }
 
 async function searchGithubRepositories(query, config) {
@@ -95,36 +103,97 @@ function normalizeGithubRepo(repo, query, route) {
     stars: repo.stargazers_count || 0,
     updatedAt: repo.updated_at,
     query,
-    matchedCapabilities: inferMatchedCapabilities(query, route.capabilities),
+    matchedCapabilities: inferMatchedCapabilities(repo, route.capabilities),
     verified: false,
     executable: false
   };
 }
 
 function inferCandidateType(repo, query) {
-  const text = `${repo.name} ${repo.description || ""} ${query}`.toLowerCase();
+  const text = repoText(repo, query);
   if (text.includes("mcp")) return "mcp";
   if (text.includes("agent")) return "agent";
   return "skill";
 }
 
-function inferMatchedCapabilities(query, capabilities) {
+function inferMatchedCapabilities(repo, capabilities) {
+  const text = repoText(repo);
   return capabilities.filter((capability) => {
-    return (capabilityQueries[capability] || []).some((candidateQuery) => query.includes(candidateQuery));
+    return capabilityKeywords(capability).some((keyword) => text.includes(keyword));
   });
 }
 
 function scoreRemoteCandidate(candidate) {
-  const starsScore = Math.min(35, Math.floor(Math.log10(candidate.stars + 1) * 12));
+  const starsScore = Math.min(30, Math.floor(Math.log10(candidate.stars + 1) * 10));
   const freshnessScore = isRecentlyUpdated(candidate.updatedAt) ? 20 : 5;
   const descriptionScore = candidate.description && candidate.description !== "설명이 없습니다." ? 15 : 0;
-  const capabilityScore = candidate.matchedCapabilities.length > 0 ? 20 : 0;
-  const typeScore = candidate.type === "mcp" || candidate.type === "skill" || candidate.type === "agent" ? 10 : 0;
+  const capabilityScore = candidate.matchedCapabilities.length > 0 ? 25 : 0;
+  const typeScore = ["mcp", "skill", "agent"].includes(candidate.type) ? 10 : 0;
   return {
     ...candidate,
     trustScore: starsScore + freshnessScore + descriptionScore + capabilityScore + typeScore,
     riskNote: "실시간 검색 후보입니다. 자동 실행하지 않고 사람이 확인한 뒤 Registry에 추가해야 합니다."
   };
+}
+
+function hasRelevantRepoText(candidate) {
+  return candidate.matchedCapabilities.length > 0 && !isGenericList(candidate);
+}
+
+function isExecutableLookingCandidate(candidate) {
+  const text = `${candidate.name} ${candidate.fullName} ${candidate.description}`.toLowerCase();
+  const executionWords = ["mcp", "agent", "api", "sdk", "tool", "server", "connector", "integration", "youtube", "sheets"];
+  const moderationWords = ["comment moderation", "toxicity", "abusive comment", "youtube comment"];
+  return executionWords.some((word) => text.includes(word)) || moderationWords.some((word) => text.includes(word));
+}
+
+function isRequestSpecificCandidate(candidate, route) {
+  const text = `${candidate.name} ${candidate.fullName} ${candidate.description}`.toLowerCase();
+  const checks = [];
+
+  if (route.capabilities.includes("댓글 분석")) {
+    checks.push(text.includes("youtube") || text.includes("comment"));
+  }
+  if (route.capabilities.includes("악성 댓글 분류")) {
+    checks.push(text.includes("moderation") || text.includes("toxicity") || text.includes("abusive") || text.includes("comment"));
+  }
+  if (route.capabilities.includes("스프레드시트 저장")) {
+    checks.push(text.includes("sheet") || text.includes("spreadsheet") || text.includes("google"));
+  }
+  if (route.capabilities.includes("도구 조합 추천")) {
+    checks.push(text.includes("mcp") || text.includes("agent") || text.includes("workflow") || text.includes("connector") || text.includes("integration"));
+  }
+
+  if (route.capabilities.includes("댓글 분석")) {
+    return text.includes("youtube") || text.includes("comment");
+  }
+  return checks.length === 0 || checks.some(Boolean);
+}
+
+function isGenericList(candidate) {
+  const text = `${candidate.name} ${candidate.fullName}`.toLowerCase();
+  return text.includes("awesome") || text.includes("public-apis") || text === "ecc";
+}
+
+function capabilityKeywords(capability) {
+  const map = {
+    "댓글 분석": ["comment", "youtube", "social"],
+    "악성 댓글 분류": ["toxicity", "moderation", "abusive", "hate", "comment"],
+    "스프레드시트 저장": ["sheet", "spreadsheet", "google"],
+    "도구 조합 추천": ["mcp", "agent", "workflow", "orchestration", "tool"],
+    "아이디어 생성": ["ideation", "brainstorm", "creative"],
+    "아이디어 검증": ["validation", "startup", "market"],
+    "홍보 문구 생성": ["copywriting", "marketing", "copy"],
+    "실행 계획 생성": ["planning", "workflow", "plan"],
+    "공식 출처 확인": ["search", "verification", "fact"],
+    "쉬운 말 변환": ["plain", "simplify", "accessibility"],
+    "문서 작성": ["document", "writing", "presentation"]
+  };
+  return map[capability] || [];
+}
+
+function repoText(repo, query = "") {
+  return `${repo.name} ${repo.full_name} ${repo.description || ""} ${query}`.toLowerCase();
 }
 
 function isRecentlyUpdated(dateText) {

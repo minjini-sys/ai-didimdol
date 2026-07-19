@@ -1,6 +1,10 @@
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-export function loadEnv(filePath = ".env") {
+const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+export function loadEnv(filePath = path.join(projectRoot, ".env")) {
   if (!fs.existsSync(filePath)) return;
   const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
   for (const line of lines) {

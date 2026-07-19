@@ -44,17 +44,6 @@
     "source": { "type": "built-in", "label": "서비스 내장 Registry" }
   },
   {
-    "id": "family-summary",
-    "name": "가족 공유 요약 스킬",
-    "description": "보호자나 가족에게 보낼 짧고 안전한 확인 요청 문장을 만듭니다.",
-    "capabilities": ["가족 공유 문장 생성", "쉬운 말 변환"],
-    "taskTypes": ["create", "organize"],
-    "privacyRisk": "low",
-    "verified": true,
-    "trustScore": 84,
-    "source": { "type": "built-in", "label": "서비스 내장 Registry" }
-  },
-  {
     "id": "heuristic-ideation",
     "name": "Heuristic Ideation 스킬",
     "description": "여러 사고 휴리스틱으로 연구, 공모, 서비스 아이디어를 넓힙니다.",
@@ -119,6 +108,39 @@
     "privacyRisk": "low",
     "verified": true,
     "trustScore": 83,
+    "source": { "type": "built-in", "label": "서비스 내장 Registry" }
+  },
+  {
+    "id": "comment-analysis",
+    "name": "댓글 분석 스킬",
+    "description": "댓글을 수집한 뒤 악성, 질문, 칭찬, 개선 요청 같은 유형으로 나눕니다.",
+    "capabilities": ["댓글 분석", "악성 댓글 분류"],
+    "taskTypes": ["verify", "organize"],
+    "privacyRisk": "medium",
+    "verified": true,
+    "trustScore": 85,
+    "source": { "type": "built-in", "label": "서비스 내장 Registry" }
+  },
+  {
+    "id": "sheet-reporting",
+    "name": "구글시트 정리 스킬",
+    "description": "분석 결과를 날짜, 댓글, 분류, 근거, 대응 상태 컬럼으로 정리합니다.",
+    "capabilities": ["스프레드시트 저장", "문서 작성"],
+    "taskTypes": ["organize", "connect"],
+    "privacyRisk": "medium",
+    "verified": true,
+    "trustScore": 82,
+    "source": { "type": "built-in", "label": "서비스 내장 Registry" }
+  },
+  {
+    "id": "workflow-composer",
+    "name": "도구 조합 설계 스킬",
+    "description": "사용자가 원하는 결과를 만들기 위해 API, MCP, Agent 사용 순서를 설계합니다.",
+    "capabilities": ["도구 조합 추천", "다음 행동 안내"],
+    "taskTypes": ["plan", "connect", "compare"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 86,
     "source": { "type": "built-in", "label": "서비스 내장 Registry" }
   }
 ]

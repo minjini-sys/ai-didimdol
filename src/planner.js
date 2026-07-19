@@ -3,17 +3,21 @@ export function fallbackPlan(input, route, matches, safety) {
     return {
       title: "도와줄 수 없는 요청입니다",
       plainAnswer: "",
-      steps: ["요청에서 안전하게 도와줄 수 없는 내용이 감지되어 실행하지 않았습니다."],
+      steps: ["안전하게 도와줄 수 없는 내용이 있어 실행하지 않았습니다."],
       deliverables: [
         {
           title: "대신 할 수 있는 일",
           items: [
-            "민감정보를 입력하지 않고 상황만 설명해 주세요.",
+            "민감정보를 빼고 상황만 다시 설명해 주세요.",
             "공식 기관이나 서비스 고객센터에서 확인할 수 있는 방법을 안내할 수 있습니다."
           ]
         }
       ]
     };
+  }
+
+  if (route.capabilities.includes("댓글 분석") || route.capabilities.includes("스프레드시트 저장")) {
+    return buildCommentWorkflowPlan();
   }
 
   if (route.capabilities.includes("홍보 문구 생성") || route.capabilities.includes("실행 계획 생성")) {
@@ -28,20 +32,7 @@ export function fallbackPlan(input, route, matches, safety) {
     return buildSafetyCheckPlan();
   }
 
-  return {
-    title: "요청에 맞춘 결과",
-    plainAnswer: "",
-    steps: [
-      "사용자가 원하는 결과물을 먼저 정리했습니다.",
-      ...route.capabilities.slice(0, 4).map((capability) => `${capability} 능력을 사용했습니다.`)
-    ],
-    deliverables: [
-      {
-        title: "초안",
-        items: [`${input}에 맞춰 더 구체적인 결과를 만들 수 있습니다. 원하는 대상, 분량, 톤을 알려주면 바로 다듬습니다.`]
-      }
-    ]
-  };
+  return buildGeneralPlan(input, route, matches);
 }
 
 export async function buildPlan(input, route, matches, safety, llm) {
@@ -50,14 +41,69 @@ export async function buildPlan(input, route, matches, safety, llm) {
   return normalizePlan(result || fallback, fallback);
 }
 
+function buildCommentWorkflowPlan() {
+  return {
+    title: "유튜브 댓글 분석과 구글시트 저장 자동화 설계",
+    plainAnswer: "",
+    steps: [
+      "유튜브 댓글을 가져옵니다.",
+      "댓글을 악성, 질문, 칭찬, 개선 요청, 기타로 분류합니다.",
+      "분류 이유와 대응 우선순위를 붙입니다.",
+      "결과를 구글시트에 자동 저장합니다."
+    ],
+    deliverables: [
+      {
+        title: "추천 도구 조합",
+        items: [
+          "YouTube Data MCP: 영상 URL이나 영상 ID를 기준으로 댓글을 가져옵니다.",
+          "댓글 분석 스킬: 댓글을 악성, 질문, 칭찬, 개선 요청, 기타로 나눕니다.",
+          "Moderation Analyst Agent: 악성 댓글 판단 이유와 대응 우선순위를 정합니다.",
+          "Google Sheets MCP: 분석 결과를 구글시트에 행 단위로 저장합니다."
+        ]
+      },
+      {
+        title: "구글시트 컬럼 예시",
+        items: [
+          "수집일",
+          "영상 제목",
+          "댓글 원문",
+          "분류: 악성 / 질문 / 칭찬 / 개선 요청 / 기타",
+          "판단 이유",
+          "대응 우선순위: 높음 / 보통 / 낮음",
+          "추천 대응 문장",
+          "처리 상태"
+        ]
+      },
+      {
+        title: "바로 만들 수 있는 실행 흐름",
+        items: [
+          "1단계: 사용자가 유튜브 영상 URL을 입력합니다.",
+          "2단계: YouTube Data MCP가 최근 댓글을 가져옵니다.",
+          "3단계: 댓글 분석 스킬이 댓글을 1차 분류합니다.",
+          "4단계: Moderation Analyst Agent가 악성 댓글의 근거와 대응 우선순위를 붙입니다.",
+          "5단계: Google Sheets MCP가 결과를 구글시트에 저장합니다.",
+          "6단계: 사용자는 시트에서 악성 댓글만 필터링해 대응합니다."
+        ]
+      },
+      {
+        title: "예상 결과 예시",
+        items: [
+          "댓글: '이 채널 진짜 별로다' → 분류: 부정 의견 / 우선순위: 낮음 / 대응: 답변하지 않거나 의견으로 기록",
+          "댓글: '사기꾼 아니냐, 신고한다' → 분류: 공격성 높음 / 우선순위: 높음 / 대응: 관리자 검토 필요",
+          "댓글: '제품 가격이 얼마인가요?' → 분류: 질문 / 우선순위: 보통 / 대응: 가격 안내 댓글 작성"
+        ]
+      }
+    ]
+  };
+}
+
 function buildSmallBusinessPlan() {
   return {
     title: "동네 카페 홍보 문구와 이번 주 실행 계획",
     plainAnswer: "",
     steps: [
-      "소상공인 홍보 문구 스킬로 동네 손님에게 맞는 짧은 문구를 만들었습니다.",
-      "주간 실행 계획 스킬로 이번 주에 바로 할 일을 날짜별로 나눴습니다.",
-      "Planner Agent와 Copywriter Agent가 문구와 실행 순서를 다듬었습니다."
+      "동네 손님에게 맞는 짧은 홍보 문구를 만들었습니다.",
+      "이번 주에 바로 할 일을 날짜별로 나눴습니다."
     ],
     deliverables: [
       {
@@ -78,15 +124,6 @@ function buildSmallBusinessPlan() {
           "금요일: 퇴근 시간대 손님을 겨냥한 문구를 추가로 올립니다.",
           "주말: 방문 손님 수, 이벤트 사용 수, 많이 팔린 메뉴를 기록합니다."
         ]
-      },
-      {
-        title: "확인할 지표",
-        items: [
-          "문구를 보고 왔다고 말한 손님 수",
-          "이벤트 사용 횟수",
-          "대표 메뉴 판매량",
-          "다음 주에도 반복할 만한 문구 1개"
-        ]
       }
     ]
   };
@@ -97,10 +134,8 @@ function buildIdeaValidationPlan() {
     title: "포용적 AI 서비스 아이디어 검증",
     plainAnswer: "",
     steps: [
-      "Heuristic Ideation 스킬로 문제를 여러 방향에서 넓혔습니다.",
-      "Creative Ideas 스킬로 서비스 후보를 사용자 행동 중심으로 바꿨습니다.",
-      "Startup Validating 스킬로 필요성, 대체 가능성, 실제 도움 여부를 검증했습니다.",
-      "Critic Agent가 발표 때 받을 반박 질문을 기준으로 약점을 점검했습니다."
+      "아이디어 후보를 넓혔습니다.",
+      "필요성, 대체 가능성, 실제 도움 여부를 검증했습니다."
     ],
     deliverables: [
       {
@@ -110,19 +145,11 @@ function buildIdeaValidationPlan() {
         ]
       },
       {
-        title: "왜 필요한가",
-        items: [
-          "비전공자는 좋은 AI 도구가 있어도 어떤 순서로 써야 하는지 모릅니다.",
-          "ChatGPT 하나에 질문하는 것보다, 목적 분류와 도구 조합을 자동으로 해 주면 결과 품질이 안정됩니다.",
-          "새 Skill과 MCP가 늘어나도 능력 단위 Registry로 연결하면 사용자는 계속 자연어만 쓰면 됩니다."
-        ]
-      },
-      {
         title: "반박 질문 대응",
         items: [
-          "ChatGPT로 대체되지 않나요? 일반 답변이 아니라 상황에 맞는 Skill/MCP/Agent 조합과 실행 과정을 자동 구성하는 점이 다릅니다.",
-          "진짜 도움이 되나요? 사용자가 프롬프트나 도구 이름을 몰라도 바로 결과물을 받기 때문에 진입 장벽을 낮춥니다.",
-          "너무 광범위하지 않나요? 질문 전체를 8개 행동과 필요한 능력으로 먼저 나누기 때문에 주제가 달라도 처리 구조를 만들 수 있습니다."
+          "ChatGPT로 대체되지 않나요? 일반 답변이 아니라 상황에 맞는 도구 조합과 실행 과정을 자동 구성하는 점이 다릅니다.",
+          "진짜 도움이 되나요? 사용자가 도구 이름을 몰라도 바로 결과물을 받기 때문에 진입 장벽을 낮춥니다.",
+          "너무 광범위하지 않나요? 질문을 먼저 행동과 필요한 능력으로 나누기 때문에 주제가 달라도 처리 구조를 만들 수 있습니다."
         ]
       }
     ]
@@ -134,24 +161,55 @@ function buildSafetyCheckPlan() {
     title: "문자 확인 도움",
     plainAnswer: "",
     steps: [
-      "보이스피싱 위험 신호 체크 스킬로 의심 표현을 확인했습니다.",
-      "개인정보 가리기 스킬로 민감정보를 먼저 보호하도록 했습니다.",
-      "공식 출처 확인 스킬로 병원 대표번호나 공식 채널 확인을 안내했습니다.",
-      "Safety Coach가 조심해야 할 행동을 정리했습니다."
+      "문자에서 위험 신호를 확인합니다.",
+      "공식 경로로 확인할 수 있게 안내합니다."
     ],
     deliverables: [
       {
         title: "먼저 확인할 것",
         items: [
           "링크를 누르라고 하거나 인증번호를 요구하면 바로 멈춥니다.",
-          "병원 이름이 있어도 문자에 있는 번호가 아니라 병원 공식 대표번호로 직접 확인합니다.",
+          "문자에 있는 번호가 아니라 공식 대표번호로 직접 확인합니다.",
           "주민번호, 계좌번호, 인증번호는 입력하지 않습니다."
         ]
       },
       {
         title: "가족에게 보낼 문장",
         items: [
-          "이 문자에 링크나 개인정보 요구가 있어서 바로 누르지 않고 확인하려고 해요. 병원 대표번호로 먼저 확인해도 될까요?"
+          "이 문자에 링크나 개인정보 요구가 있어서 바로 누르지 않고 확인하려고 해요. 공식 대표번호로 먼저 확인해도 될까요?"
+        ]
+      }
+    ]
+  };
+}
+
+function buildGeneralPlan(input, route, matches) {
+  const skillNames = matches.skills?.map((skill) => skill.name).slice(0, 3) || [];
+  const mcpNames = matches.mcps?.map((mcp) => mcp.name).slice(0, 3) || [];
+  return {
+    title: "요청에 맞춘 결과",
+    plainAnswer: "",
+    steps: [
+      "요청을 읽고 필요한 결과 형태를 정했습니다.",
+      "사용할 수 있는 도움 기능을 골랐습니다.",
+      "바로 실행할 수 있는 초안으로 정리했습니다."
+    ],
+    deliverables: [
+      {
+        title: "바로 실행할 방향",
+        items: [
+          `${input}`,
+          skillNames.length ? `먼저 사용할 기능: ${skillNames.join(", ")}` : "먼저 결과 초안을 만들고 필요한 정보를 추가로 정리합니다.",
+          mcpNames.length ? `연결하면 좋은 외부 도구: ${mcpNames.join(", ")}` : "외부 도구 연결 없이도 초안 작성부터 시작할 수 있습니다."
+        ]
+      },
+      {
+        title: "다음에 입력하면 더 좋아지는 정보",
+        items: [
+          "대상 사용자",
+          "원하는 분량",
+          "결과를 어디에 사용할지",
+          "반드시 포함하거나 제외할 내용"
         ]
       }
     ]

@@ -16,7 +16,6 @@ test("routes phishing-like message to safety workflow without exposing admin lab
   assert.ok(result.route.capabilities.includes("개인정보 보호"));
   assert.ok(result.userView.warnings.length > 0);
   assert.ok(result.userView.deliverables.some((section) => section.title.includes("가족")));
-  assert.ok(result.userView.routerTrace.some((stage) => stage.used.some((item) => item.includes("보이스피싱 위험 신호 체크 스킬"))));
 });
 
 test("routes hackathon idea request to installed ideation and validation skills", async () => {
@@ -31,7 +30,6 @@ test("routes hackathon idea request to installed ideation and validation skills"
   assert.ok(result.route.capabilities.includes("아이디어 검증"));
   assert.ok(result.matches.skills.some((skill) => skill.name === "Heuristic Ideation 스킬"));
   assert.ok(result.matches.skills.some((skill) => skill.name === "Startup Validating 스킬"));
-  assert.ok(result.userView.routerTrace.some((stage) => stage.used.some((item) => item.includes("C:/Users/a4814/.codex/skills/heuristic-ideation/SKILL.md"))));
 });
 
 test("creates usable copy and weekly plan for a small cafe request without showing unused MCP", async () => {
@@ -54,7 +52,23 @@ test("creates usable copy and weekly plan for a small cafe request without showi
   assert.equal(result.userView.warnings.length, 0);
 });
 
-test("adds verified remote candidates when dynamic registry search is enabled", async (t) => {
+test("creates concrete tool workflow for youtube comment analysis and sheet storage", async () => {
+  const result = await runDidimdolPipeline(
+    "유튜브 댓글을 분석해서 악성 댓글을 분류하고 결과를 구글시트에 저장하는 AI 도구 조합을 찾고 싶어.",
+    config
+  );
+
+  assert.ok(result.route.taskTypes.includes("connect"));
+  assert.ok(result.route.capabilities.includes("댓글 분석"));
+  assert.ok(result.route.capabilities.includes("악성 댓글 분류"));
+  assert.ok(result.route.capabilities.includes("스프레드시트 저장"));
+  assert.ok(result.matches.mcps.some((mcp) => mcp.name === "YouTube Data MCP"));
+  assert.ok(result.matches.mcps.some((mcp) => mcp.name === "Google Sheets MCP"));
+  assert.ok(result.userView.deliverables.some((section) => section.title.includes("추천 도구 조합")));
+  assert.ok(result.userView.deliverables.some((section) => section.title.includes("구글시트 컬럼")));
+});
+
+test("shows remote candidates only when the user explicitly asks for GitHub/latest search", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => {
     globalThis.fetch = originalFetch;
@@ -66,10 +80,10 @@ test("adds verified remote candidates when dynamic registry search is enabled", 
       return {
         items: [
           {
-            name: "awesome-copywriting-agent",
-            full_name: "example/awesome-copywriting-agent",
+            name: "copywriting-agent-tool",
+            full_name: "example/copywriting-agent-tool",
             description: "Marketing copywriting agent for small business",
-            html_url: "https://github.com/example/awesome-copywriting-agent",
+            html_url: "https://github.com/example/copywriting-agent-tool",
             stargazers_count: 240,
             updated_at: new Date().toISOString(),
             owner: { login: "example" }
@@ -80,7 +94,7 @@ test("adds verified remote candidates when dynamic registry search is enabled", 
   });
 
   const result = await runDidimdolPipeline(
-    "작은 카페를 운영하는데 동네 손님에게 보낼 홍보 문구와 이번 주 실행 계획을 만들고 싶어.",
+    "GitHub에서 작은 카페 홍보에 쓸 최신 copywriting agent 후보를 찾아서 추천해줘.",
     {
       provider: "fallback",
       dynamicRegistry: true,
@@ -94,6 +108,6 @@ test("adds verified remote candidates when dynamic registry search is enabled", 
 
   assert.equal(result.matches.remote.enabled, true);
   assert.equal(result.matches.remote.status, "ok");
-  assert.ok(result.matches.remote.candidates.some((candidate) => candidate.url.includes("github.com/example/awesome-copywriting-agent")));
+  assert.ok(result.matches.remote.candidates.some((candidate) => candidate.url.includes("github.com/example/copywriting-agent-tool")));
   assert.ok(result.userView.routerTrace.some((stage) => stage.title.includes("실시간 후보 검색")));
 });

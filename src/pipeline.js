@@ -39,6 +39,8 @@ function selectUsedTools(route, matches, safety) {
     if (agent.id === "copywriter") return route.capabilities.includes("홍보 문구 생성");
     if (agent.id === "critic") return route.capabilities.includes("아이디어 검증");
     if (agent.id === "explorer") return route.capabilities.includes("아이디어 생성");
+    if (agent.id === "moderation-analyst") return route.capabilities.includes("댓글 분석") || route.capabilities.includes("악성 댓글 분류");
+    if (agent.id === "workflow-architect") return route.capabilities.includes("도구 조합 추천") || route.capabilities.includes("스프레드시트 저장");
     if (agent.id === "safety-coach") return safety.status !== "allow";
     return agent.capabilities.some((capability) => route.capabilities.includes(capability));
   });
@@ -53,6 +55,7 @@ function selectUsedTools(route, matches, safety) {
 
 function shouldUseMcp(route, safety) {
   if (route.taskTypes.includes("connect")) return true;
+  if (route.capabilities.includes("댓글 분석") || route.capabilities.includes("스프레드시트 저장")) return true;
   if (safety.status !== "allow" && route.capabilities.includes("공식 출처 확인")) return true;
   return false;
 }
@@ -60,32 +63,32 @@ function shouldUseMcp(route, safety) {
 function buildRouterTrace(route, matches, safety, plan, providerName) {
   const trace = [
     {
-      title: "1. 요청 이해",
-      description: "사용자 문장을 읽고 필요한 능력을 골랐습니다.",
-      used: [`Router Model: ${route.model}`, `LLM Provider: ${providerName}`]
+      title: "1. 요청 파악",
+      description: "입력한 문장에서 원하는 결과와 필요한 도움 기능을 골랐습니다.",
+      used: ["요청 내용을 읽고 필요한 결과 형태를 정했습니다."]
     },
     {
-      title: "2. 내장 Skill 선택",
-      description: "검증되어 있는 내부 Registry에서 결과물을 만들 Skill을 골랐습니다.",
+      title: "2. 도움 기능 선택",
+      description: "결과물을 만들기 위해 필요한 기능만 골랐습니다.",
       used: matches.skills.map(formatSkill)
     }
   ];
 
-  const remoteStage = buildRemoteStage(matches.remote);
+  const remoteStage = buildRemoteStage(matches.remote, route);
   if (remoteStage) trace.push({ ...remoteStage, title: `${trace.length + 1}. ${remoteStage.title}` });
 
   if (matches.mcps.length > 0) {
     trace.push({
-      title: `${trace.length + 1}. MCP 연결`,
-      description: "외부 확인이나 실제 도구 연결이 필요한 경우에만 MCP를 사용합니다.",
+      title: `${trace.length + 1}. 외부 도구 연결`,
+      description: "댓글 가져오기나 구글시트 저장처럼 실제 연결이 필요한 경우에만 사용합니다.",
       used: matches.mcps.map((mcp) => mcp.name)
     });
   }
 
   if (matches.agents.length > 0) {
     trace.push({
-      title: `${trace.length + 1}. Agent 역할`,
-      description: "결과물을 다듬기 위해 필요한 역할의 Agent만 사용했습니다.",
+      title: `${trace.length + 1}. 역할 나누기`,
+      description: "분석, 계획, 문장 작성처럼 필요한 역할만 나눠 처리했습니다.",
       used: matches.agents.map((agent) => agent.name)
     });
   }
@@ -107,8 +110,9 @@ function buildRouterTrace(route, matches, safety, plan, providerName) {
   return trace.filter((stage) => stage.used.length > 0);
 }
 
-function buildRemoteStage(remote) {
+function buildRemoteStage(remote, route) {
   if (!remote?.enabled) return null;
+  if (!shouldShowRemoteStage(route)) return null;
   if (remote.status === "failed") {
     return {
       title: "실시간 후보 검색",
@@ -125,11 +129,16 @@ function buildRemoteStage(remote) {
   }
   return {
     title: "실시간 후보 검색",
-    description: "GitHub에서 새 Skill/MCP/Agent 후보를 찾고 신뢰도 기준을 통과한 항목만 후보로 표시했습니다. 아직 자동 실행하지는 않습니다.",
+    description: "GitHub에서 새 후보를 찾아봤습니다. 바로 실행하지 않고 참고 후보로만 보여줍니다.",
     used: remote.candidates.map((candidate) => {
-      return `${candidate.name} (${candidate.type}, trust ${candidate.trustScore}) - ${candidate.url}`;
+      return `${candidate.name} - ${candidate.url}`;
     })
   };
+}
+
+function shouldShowRemoteStage(route) {
+  const text = route.intent.toLowerCase();
+  return ["github", "깃허브", "인터넷", "최신", "새로 나온", "실시간", "mcp 서버"].some((keyword) => text.includes(keyword));
 }
 
 function formatSkill(skill) {

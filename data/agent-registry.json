@@ -10,16 +10,6 @@
     "trustScore": 92
   },
   {
-    "id": "plain-language-helper",
-    "name": "Plain Language Helper",
-    "description": "사용자 수준에 맞춰 쉬운 말로 바꾸어 설명합니다.",
-    "capabilities": ["쉬운 말 변환"],
-    "taskTypes": ["understand", "learn"],
-    "privacyRisk": "low",
-    "verified": true,
-    "trustScore": 90
-  },
-  {
     "id": "verification-agent",
     "name": "Verification Agent",
     "description": "AI 판단의 불확실성과 공식 확인 경로를 제시합니다.",
@@ -53,7 +43,7 @@
     "id": "planner",
     "name": "Planner Agent",
     "description": "실행 순서, 일정, 다음 행동을 만듭니다.",
-    "capabilities": ["다음 행동 안내", "일정 관리", "실행 계획 생성"],
+    "capabilities": ["다음 행동 안내", "일정 관리", "실행 계획 생성", "도구 조합 추천"],
     "taskTypes": ["plan"],
     "privacyRisk": "low",
     "verified": true,
@@ -68,5 +58,25 @@
     "privacyRisk": "low",
     "verified": true,
     "trustScore": 79
+  },
+  {
+    "id": "moderation-analyst",
+    "name": "Moderation Analyst Agent",
+    "description": "댓글을 악성, 질문, 칭찬, 개선 요청으로 분류하고 이유를 설명합니다.",
+    "capabilities": ["댓글 분석", "악성 댓글 분류"],
+    "taskTypes": ["verify", "organize"],
+    "privacyRisk": "medium",
+    "verified": true,
+    "trustScore": 86
+  },
+  {
+    "id": "workflow-architect",
+    "name": "Workflow Architect Agent",
+    "description": "여러 도구를 어떤 순서로 연결할지 설계합니다.",
+    "capabilities": ["도구 조합 추천", "스프레드시트 저장"],
+    "taskTypes": ["plan", "connect"],
+    "privacyRisk": "low",
+    "verified": true,
+    "trustScore": 87
   }
 ]
