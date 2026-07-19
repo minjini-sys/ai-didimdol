@@ -6,6 +6,7 @@ let lastCandidates = [];
 let lastInput = "";
 let approvedSkillIds = new Set();
 let lastSkillApprovalView = null;
+let nextStepReady = false;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -13,6 +14,7 @@ form.addEventListener("submit", async (event) => {
   if (!value) return;
   lastInput = value;
   approvedSkillIds = new Set();
+  nextStepReady = false;
   await submitPrompt(value);
 });
 
@@ -50,33 +52,16 @@ function toggleSkillApproval(candidateId) {
   } else {
     approvedSkillIds.add(candidateId);
   }
+  nextStepReady = false;
 
   renderSkillApproval(lastSkillApprovalView || currentApprovalView());
 }
 
-async function proceedWithApprovedSkills() {
-  const approvedIds = [...approvedSkillIds];
-  if (!approvedIds.length) return;
+function proceedWithApprovedSkills() {
+  if (!approvedSkillIds.size) return;
 
-  setLoading("선택한 Skill을 다음 단계에서 확인할 준비를 하고 있습니다.");
-
-  const response = await fetch("/api/route", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      input: lastInput,
-      approvedSkillIds: approvedIds,
-      candidates: lastCandidates
-    })
-  });
-  const data = await response.json();
-
-  if (!response.ok) {
-    renderError(data.error || "다음 단계로 넘어가는 중 문제가 생겼습니다.");
-    return;
-  }
-
-  render(data.userView);
+  nextStepReady = true;
+  renderSkillApproval(lastSkillApprovalView || currentApprovalView());
 }
 
 function setLoading(message) {
@@ -86,11 +71,6 @@ function setLoading(message) {
 function render(view) {
   if (view.mode === "skill-approval") {
     renderSkillApproval(view);
-    return;
-  }
-
-  if (view.mode === "approved") {
-    renderApproved(view);
     return;
   }
 
@@ -111,7 +91,8 @@ function renderSkillApproval(view) {
         <h2>${selected.length}개를 임시 확인 대상으로 골랐습니다</h2>
         <p>아직 다운로드하거나 로컬에 저장하지 않았습니다. 원하면 각 후보에서 승인 취소를 누를 수 있습니다.</p>
         <ul>${selected.map((candidate) => `<li>${escapeHtml(candidate.plainTitle || candidate.name)}</li>`).join("")}</ul>
-        <button type="button" class="primary-action next-action" data-proceed-skills>다음 단계로</button>
+        ${nextStepReady ? renderNextStepTodo() : ""}
+        ${nextStepReady ? "" : `<button type="button" class="primary-action next-action" data-proceed-skills>다음 단계로</button>`}
       </section>`
     : "";
 
@@ -131,15 +112,29 @@ function renderSkillApproval(view) {
       <p>아래 후보는 GitHub에서 실시간으로 찾았습니다. 아직 다운로드하지 않았고, 로컬에도 저장하지 않았습니다.</p>
     </section>
 
-    ${selectedSummary}
-
     <div class="candidate-list">${candidates}</div>
+
+    ${selectedSummary}
   `;
 
   document.querySelectorAll("[data-toggle-skill]").forEach((button) => {
     button.addEventListener("click", () => toggleSkillApproval(button.dataset.toggleSkill));
   });
   document.querySelector("[data-proceed-skills]")?.addEventListener("click", proceedWithApprovedSkills);
+}
+
+function renderNextStepTodo() {
+  return `
+    <div class="next-step-box">
+      <h3>다음에 만들어야 할 기능</h3>
+      <ol>
+        <li>선택한 GitHub 후보의 파일을 임시로 읽습니다.</li>
+        <li>Skill 내용에 위험한 지시나 과한 권한 요구가 있는지 확인합니다.</li>
+        <li>요청에 실제로 도움이 되는 Skill만 최종 사용 대상으로 남깁니다.</li>
+        <li>남은 Skill을 바탕으로 사용자가 바로 쓸 수 있는 결과물을 만듭니다.</li>
+      </ol>
+    </div>
+  `;
 }
 
 function renderCandidateCard(candidate) {
@@ -201,30 +196,6 @@ function currentApprovalView() {
     candidates: lastCandidates,
     emptyMessage: "조건에 맞는 Skill 후보를 찾지 못했습니다."
   };
-}
-
-function renderApproved(view) {
-  const approved = view.approved || [];
-  resultBody.innerHTML = `
-    <section class="intent-panel">
-      <p class="step-label">승인 완료</p>
-      <h2>${escapeHtml(view.title)}</h2>
-      <p>${escapeHtml(view.message)}</p>
-    </section>
-    <div class="candidate-list">
-      ${approved.map((candidate) => `
-        <article class="candidate-card">
-          <span class="verdict ${verdictClass(candidate.verdict?.label)}">${escapeHtml(displayVerdictLabel(candidate.verdict?.label))}</span>
-          <h3>${escapeHtml(candidate.plainTitle || candidate.name)}</h3>
-          <p>${escapeHtml(candidate.plainSummary || "")}</p>
-          <div class="source-line">
-            <span>출처</span>
-            <a href="${escapeHtml(candidate.url)}" target="_blank" rel="noreferrer">${escapeHtml(candidate.fullName)}</a>
-          </div>
-        </article>
-      `).join("")}
-    </div>
-  `;
 }
 
 function verdictClass(label) {

@@ -63,7 +63,7 @@ function buildApprovedView(input, route, approvedSkillIds, candidates) {
     skillSearch: { source: "github", searchedQueries: route.searchTerms || [], candidates },
     userView: {
       mode: "approved",
-      title: "승인되었습니다",
+      title: "다음 단계 준비",
       intent: {
         label: route.intentLabel,
         summary: route.intent,
