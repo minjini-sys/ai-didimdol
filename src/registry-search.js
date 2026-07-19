@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { searchRemoteRegistry } from "./remote-registry-search.js";
 
 const registryPaths = {
   skills: "data/skill-registry.json",
@@ -15,13 +16,22 @@ export async function loadRegistries() {
   return { skills, mcps, agents };
 }
 
-export async function searchRegistry(route) {
+export async function searchRegistry(route, config = {}) {
   const registries = await loadRegistries();
-  return {
+  const local = {
     skills: rank(registries.skills, route).slice(0, 5),
     mcps: rank(registries.mcps, route).slice(0, 4),
     agents: rank(registries.agents, route).slice(0, 4)
   };
+
+  const remote = await searchRemoteRegistry(route, config).catch((error) => ({
+    enabled: Boolean(config.dynamicRegistry),
+    status: "failed",
+    error: error.message,
+    candidates: []
+  }));
+
+  return { ...local, remote };
 }
 
 function rank(items, route) {
@@ -55,4 +65,3 @@ function scoreItem(item, route) {
 async function readJson(filePath) {
   return JSON.parse(await fs.readFile(filePath, "utf8"));
 }
-

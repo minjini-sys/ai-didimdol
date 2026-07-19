@@ -85,7 +85,7 @@ function renderRouterTrace(stages) {
   routerDetails.hidden = stages.length === 0;
 
   stages.forEach((stage) => {
-    const used = stage.used.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+    const used = stage.used.map((item) => `<li>${linkify(escapeHtml(item))}</li>`).join("");
     routerTrace.insertAdjacentHTML(
       "beforeend",
       `<article class="trace-card">
@@ -95,6 +95,13 @@ function renderRouterTrace(stages) {
       </article>`
     );
   });
+}
+
+function linkify(value) {
+  return value.replace(
+    /(https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)/g,
+    '<a href="$1" target="_blank" rel="noreferrer">$1</a>'
+  );
 }
 
 function escapeHtml(value) {

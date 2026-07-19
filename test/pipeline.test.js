@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { runDidimdolPipeline } from "../src/pipeline.js";
 
-const config = { provider: "fallback" };
+const config = { provider: "fallback", dynamicRegistry: false };
 
 test("routes phishing-like message to safety workflow without exposing admin labels", async () => {
   const result = await runDidimdolPipeline(
@@ -52,4 +52,48 @@ test("creates usable copy and weekly plan for a small cafe request without showi
   assert.ok(result.userView.deliverables.some((section) => section.title.includes("홍보 문구")));
   assert.ok(result.userView.deliverables.some((section) => section.title.includes("실행 계획")));
   assert.equal(result.userView.warnings.length, 0);
+});
+
+test("adds verified remote candidates when dynamic registry search is enabled", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  globalThis.fetch = async () => ({
+    ok: true,
+    async json() {
+      return {
+        items: [
+          {
+            name: "awesome-copywriting-agent",
+            full_name: "example/awesome-copywriting-agent",
+            description: "Marketing copywriting agent for small business",
+            html_url: "https://github.com/example/awesome-copywriting-agent",
+            stargazers_count: 240,
+            updated_at: new Date().toISOString(),
+            owner: { login: "example" }
+          }
+        ]
+      };
+    }
+  });
+
+  const result = await runDidimdolPipeline(
+    "작은 카페를 운영하는데 동네 손님에게 보낼 홍보 문구와 이번 주 실행 계획을 만들고 싶어.",
+    {
+      provider: "fallback",
+      dynamicRegistry: true,
+      dynamicRegistryLimit: 3,
+      dynamicRegistryPerQuery: 1,
+      dynamicRegistryMaxQueries: 1,
+      dynamicRegistryMinTrust: 35,
+      dynamicRegistryTimeoutMs: 1000
+    }
+  );
+
+  assert.equal(result.matches.remote.enabled, true);
+  assert.equal(result.matches.remote.status, "ok");
+  assert.ok(result.matches.remote.candidates.some((candidate) => candidate.url.includes("github.com/example/awesome-copywriting-agent")));
+  assert.ok(result.userView.routerTrace.some((stage) => stage.title.includes("실시간 후보 검색")));
 });

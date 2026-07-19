@@ -24,7 +24,18 @@ export function getConfig() {
     geminiModel: process.env.GEMINI_MODEL || "gemini-2.5-flash",
     ollamaBaseUrl: process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434",
     ollamaModel: process.env.OLLAMA_MODEL || "qwen3:8b",
+    githubToken: process.env.GITHUB_TOKEN || "",
+    dynamicRegistry: parseBoolean(process.env.DYNAMIC_REGISTRY || "false"),
+    dynamicRegistryLimit: Number.parseInt(process.env.DYNAMIC_REGISTRY_LIMIT || "3", 10),
+    dynamicRegistryPerQuery: Number.parseInt(process.env.DYNAMIC_REGISTRY_PER_QUERY || "3", 10),
+    dynamicRegistryMaxQueries: Number.parseInt(process.env.DYNAMIC_REGISTRY_MAX_QUERIES || "3", 10),
+    dynamicRegistryMinTrust: Number.parseInt(process.env.DYNAMIC_REGISTRY_MIN_TRUST || "35", 10),
+    dynamicRegistryTimeoutMs: Number.parseInt(process.env.DYNAMIC_REGISTRY_TIMEOUT_MS || "3500", 10),
     port: Number.parseInt(process.env.PORT || "3000", 10)
   };
+}
+
+function parseBoolean(value) {
+  return ["1", "true", "yes", "on"].includes(String(value).toLowerCase());
 }
 
