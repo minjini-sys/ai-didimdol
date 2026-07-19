@@ -50,6 +50,51 @@ test("explains internet skill candidates with filled user-facing sections", asyn
   assert.equal(candidate.downloadPolicy, "승인 전에는 다운로드하지 않고, 로컬에도 저장하지 않습니다.");
 });
 
+test("fallback candidate explanations stay different per repository", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+  globalThis.fetch = async () => ({
+    ok: true,
+    async json() {
+      return {
+        items: [
+          {
+            name: "meeting-notes-assistant",
+            full_name: "example/meeting-notes-assistant",
+            description: "Assistant that turns meeting notes into action items",
+            html_url: "https://github.com/example/meeting-notes-assistant",
+            stargazers_count: 90,
+            updated_at: new Date().toISOString(),
+            owner: { login: "example" }
+          },
+          {
+            name: "email-draft-agent",
+            full_name: "example/email-draft-agent",
+            description: "Agent for drafting short customer emails",
+            html_url: "https://github.com/example/email-draft-agent",
+            stargazers_count: 80,
+            updated_at: new Date().toISOString(),
+            owner: { login: "example" }
+          }
+        ]
+      };
+    }
+  });
+
+  const result = await runDidimdolPipeline(
+    "회의 내용을 정리하고 고객에게 보낼 메일 초안을 만들고 싶어.",
+    { provider: "fallback", dynamicRegistryLimit: 3, dynamicRegistryPerQuery: 2, dynamicRegistryMaxQueries: 1 }
+  );
+
+  const summaries = result.userView.candidates.map((candidate) => candidate.plainSummary);
+  const helps = result.userView.candidates.map((candidate) => candidate.helpsWith.join(" / "));
+  assert.equal(result.userView.candidates.length, 2);
+  assert.notEqual(summaries[0], summaries[1]);
+  assert.notEqual(helps[0], helps[1]);
+});
+
 test("selection step keeps risk wording internal and uses verdict instead", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => {

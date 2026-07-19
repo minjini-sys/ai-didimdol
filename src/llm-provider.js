@@ -24,6 +24,13 @@ function openaiProvider(config) {
       } catch {
         return { ...fallback, model: "fallback-router" };
       }
+    },
+    async explainSkills(route, candidates) {
+      try {
+        return normalizeSkillExplanations(await callOpenAi(config, skillExplanationPrompt(route, candidates)));
+      } catch {
+        return [];
+      }
     }
   };
 }
@@ -38,6 +45,13 @@ function geminiProvider(config) {
       } catch {
         return { ...fallback, model: "fallback-router" };
       }
+    },
+    async explainSkills(route, candidates) {
+      try {
+        return normalizeSkillExplanations(await callGemini(config, skillExplanationPrompt(route, candidates)));
+      } catch {
+        return [];
+      }
     }
   };
 }
@@ -51,6 +65,13 @@ function ollamaProvider(config) {
         return { ...fallback, ...safeJson(json), model: config.ollamaModel };
       } catch {
         return { ...fallback, model: "fallback-router" };
+      }
+    },
+    async explainSkills(route, candidates) {
+      try {
+        return normalizeSkillExplanations(await callOllama(config, skillExplanationPrompt(route, candidates)));
+      } catch {
+        return [];
       }
     }
   };
@@ -115,6 +136,44 @@ function routerPrompt(input, fallback) {
     `Fallback example: ${JSON.stringify(fallback)}`,
     `Input: ${input}`
   ].join("\n");
+}
+
+function skillExplanationPrompt(route, candidates) {
+  const compactCandidates = candidates.map((candidate) => ({
+    id: candidate.id,
+    name: candidate.name,
+    fullName: candidate.fullName,
+    description: candidate.originalDescription,
+    query: candidate.query,
+    stars: candidate.stars
+  }));
+
+  return [
+    "아래 GitHub 저장소 후보를 비전공자도 이해할 수 있는 한국어로 각각 다르게 설명하세요.",
+    "서비스 맥락: 사용자는 AI Skill, MCP, Agent를 몰라도 자기 목적에 맞는 도움 기능을 고르고 싶어 합니다.",
+    "후보가 서로 비슷해 보여도 저장소 이름과 설명의 차이를 반영하세요.",
+    "과장하지 말고, 저장소 설명에 없는 기능을 지어내지 마세요.",
+    "반드시 JSON 배열만 출력하세요.",
+    "각 항목 필드: id, plainTitle, plainSummary, helpsWith, intentFit.",
+    "plainTitle은 18자 안팎의 쉬운 제목, plainSummary는 한 문장, helpsWith는 1~3개 한국어 문장 배열, intentFit은 왜 이 요청과 맞는지 한 문장.",
+    `사용자 의도: ${route.intentLabel}`,
+    `검색 후보: ${JSON.stringify(compactCandidates)}`
+  ].join("\n");
+}
+
+function normalizeSkillExplanations(text) {
+  const parsed = safeJson(text);
+  const items = Array.isArray(parsed) ? parsed : parsed.items;
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((item) => item && typeof item.id === "string")
+    .map((item) => ({
+      id: item.id,
+      plainTitle: typeof item.plainTitle === "string" ? item.plainTitle : "",
+      plainSummary: typeof item.plainSummary === "string" ? item.plainSummary : "",
+      helpsWith: Array.isArray(item.helpsWith) ? item.helpsWith.filter((value) => typeof value === "string") : [],
+      intentFit: typeof item.intentFit === "string" ? item.intentFit : ""
+    }));
 }
 
 function safeJson(text) {

@@ -44,7 +44,7 @@ export async function searchRemoteSkills(route, config = {}) {
   return {
     source: "github",
     searchedQueries: queries,
-    candidates
+    candidates: await enrichCandidateExplanations(candidates, route, config)
   };
 }
 
@@ -155,7 +155,8 @@ function makePlainTitle(candidate) {
   if (text.includes("validation") || text.includes("startup") || text.includes("market")) {
     return "아이디어가 쓸모 있는지 검토하는 도구 후보";
   }
-  return "AI 작업을 도와주는 도구 후보";
+  const readableName = readableRepoName(candidate.name);
+  return `${readableName} 도구 후보`;
 }
 
 function makePlainSummary(candidate) {
@@ -178,7 +179,9 @@ function makePlainSummary(candidate) {
   if (text.includes("workflow") || text.includes("automation")) {
     return "여러 작업을 순서대로 묶어 자동으로 처리하는 데 쓰일 수 있습니다.";
   }
-  return "GitHub 설명만으로는 정확한 기능을 확정하기 어렵지만, 검색 의도와 일부 관련이 있어 후보로 가져왔습니다.";
+  const description = cleanDescription(candidate.originalDescription);
+  if (description) return `저장소 설명에 따르면 ${description}`;
+  return `${readableRepoName(candidate.name)}라는 이름의 저장소로, 검색 의도와 일부 관련이 있어 후보로 가져왔습니다.`;
 }
 
 function explainHelpsWith(candidate) {
@@ -191,12 +194,71 @@ function explainHelpsWith(candidate) {
   if (text.includes("requirement") || text.includes("checklist")) items.push("조건, 제출물, 마감일 같은 확인 항목을 뽑는 작업");
   if (text.includes("workflow") || text.includes("automation")) items.push("반복되는 절차를 자동화하는 작업");
   if (text.includes("skill") || text.includes("prompt")) items.push("AI에게 더 좋은 지시를 주는 작업");
-  return items.length ? items : ["이 요청에 도움이 될 가능성이 있는 AI 작업 보조"];
+  if (items.length) return items;
+
+  const nameWords = readableRepoName(candidate.name);
+  const description = cleanDescription(candidate.originalDescription);
+  if (description) return [`${description} 내용을 바탕으로 요청과 맞는지 확인하는 작업`];
+  return [`${nameWords} 저장소가 실제 Skill로 쓸 수 있는지 확인하는 작업`];
 }
 
 function explainIntentFit(candidate) {
   const query = candidate.query.replace(" in:name,description", "");
-  return `"${candidate.intentLabel}"와 관련된 후보를 찾기 위해 "${query}"로 검색했고, 저장소 이름이나 설명에서 관련 단어가 발견되었습니다.`;
+  const matched = matchedQueryWords(candidate, query);
+  if (matched.length) {
+    return `"${candidate.intentLabel}"에 맞춰 검색했고, 저장소 정보에서 ${matched.map((word) => `"${word}"`).join(", ")} 같은 관련 단어가 보였습니다.`;
+  }
+  return `"${candidate.intentLabel}"와 관련된 후보를 찾기 위해 "${query}"로 검색한 결과에 포함됐습니다.`;
+}
+
+async function enrichCandidateExplanations(candidates, route, config) {
+  const explain = config.llmProvider?.explainSkills;
+  if (typeof explain !== "function" || candidates.length === 0) return candidates;
+
+  const explanations = await explain(route, candidates).catch(() => []);
+  const byId = new Map(explanations.map((item) => [item.id, item]));
+  return candidates.map((candidate) => {
+    const explanation = byId.get(candidate.id);
+    if (!explanation) return candidate;
+    return {
+      ...candidate,
+      plainTitle: explanation.plainTitle || candidate.plainTitle,
+      plainSummary: explanation.plainSummary || candidate.plainSummary,
+      helpsWith: explanation.helpsWith?.length ? explanation.helpsWith : candidate.helpsWith,
+      intentFit: explanation.intentFit || candidate.intentFit,
+      explanationModel: config.llmProvider.name
+    };
+  });
+}
+
+function cleanDescription(description) {
+  if (!description || description === "저장소 설명이 없습니다.") return "";
+  const cleaned = description
+    .replace(/\s+/g, " ")
+    .replace(/[.。]+$/u, "")
+    .trim();
+  if (!cleaned) return "";
+  return `${cleaned.slice(0, 140)}${cleaned.length > 140 ? "..." : ""} 기능과 관련된 후보입니다.`;
+}
+
+function readableRepoName(name) {
+  return String(name || "AI")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 4)
+    .join(" ") || "AI";
+}
+
+function matchedQueryWords(candidate, query) {
+  const text = candidateText(candidate);
+  return [...new Set(query
+    .split(/\s+/)
+    .map((word) => word.toLowerCase().replace(/[^a-z0-9]/g, ""))
+    .filter((word) => word.length > 3 && text.includes(word)))]
+    .slice(0, 3);
 }
 
 function buildVerdict(candidate, safety) {

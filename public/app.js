@@ -143,8 +143,9 @@ function renderSkillApproval(view) {
 }
 
 function renderCandidateCard(candidate) {
-  const helps = candidate.helpsWith?.length ? candidate.helpsWith : ["이 요청에 도움이 될 가능성이 있는 AI 작업 보조"];
-  const intentFit = candidate.intentFit || "검색어와 저장소 설명이 일부 맞아 후보로 가져왔습니다.";
+  const candidateName = candidate.plainTitle || candidate.name || "이 후보";
+  const helps = candidate.helpsWith?.length ? candidate.helpsWith : [`${candidateName}가 요청에 맞는지 확인하는 작업`];
+  const intentFit = candidate.intentFit || `${candidate.fullName || candidateName} 저장소가 검색 결과에 포함되어 후보로 가져왔습니다.`;
   const isApproved = approvedSkillIds.has(candidate.id);
   const approval = candidate.canApprove === false
     ? `<div class="blocked-box">권한이 큰 도구일 수 있어 이 후보는 다운로드하지 않습니다.</div>`

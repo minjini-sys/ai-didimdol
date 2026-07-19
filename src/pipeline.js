@@ -12,6 +12,7 @@ export async function runDidimdolPipeline(input, config, options = {}) {
 
   const skillSearch = await searchRemoteSkills(route, {
     ...config,
+    llmProvider: llm,
     dynamicRegistryMaxQueries: config.dynamicRegistryMaxQueries || 3,
     dynamicRegistryPerQuery: config.dynamicRegistryPerQuery || 5,
     dynamicRegistryLimit: config.dynamicRegistryLimit || 5,
