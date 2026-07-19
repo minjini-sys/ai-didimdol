@@ -4,12 +4,15 @@ const resultBody = document.querySelector("#resultBody");
 
 let lastCandidates = [];
 let lastInput = "";
+let approvedSkillIds = new Set();
+let lastSkillApprovalView = null;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const value = input.value.trim();
   if (!value) return;
   lastInput = value;
+  approvedSkillIds = new Set();
   await submitPrompt(value);
 });
 
@@ -38,29 +41,17 @@ async function submitPrompt(value) {
   render(data.userView);
 }
 
-async function approveSkill(candidateId) {
+function toggleSkillApproval(candidateId) {
   const candidate = lastCandidates.find((item) => item.id === candidateId);
   if (!candidate || candidate.canApprove === false) return;
 
-  setLoading("승인 내용을 확인하고 있습니다.");
-
-  const response = await fetch("/api/route", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      input: lastInput,
-      approvedSkillIds: [candidateId],
-      candidates: lastCandidates
-    })
-  });
-  const data = await response.json();
-
-  if (!response.ok) {
-    renderError(data.error || "승인 처리 중 문제가 생겼습니다.");
-    return;
+  if (approvedSkillIds.has(candidateId)) {
+    approvedSkillIds.delete(candidateId);
+  } else {
+    approvedSkillIds.add(candidateId);
   }
 
-  render(data.userView);
+  renderSkillApproval(lastSkillApprovalView || currentApprovalView());
 }
 
 function setLoading(message) {
@@ -82,11 +73,21 @@ function render(view) {
 }
 
 function renderSkillApproval(view) {
+  lastSkillApprovalView = view;
   lastCandidates = view.candidates || [];
 
   const candidates = lastCandidates.length
     ? lastCandidates.map(renderCandidateCard).join("")
     : `<p class="empty">${escapeHtml(view.emptyMessage)}</p>`;
+  const selected = lastCandidates.filter((candidate) => approvedSkillIds.has(candidate.id));
+  const selectedSummary = selected.length
+    ? `<section class="selected-panel">
+        <p class="step-label">선택한 Skill</p>
+        <h2>${selected.length}개를 임시 확인 대상으로 골랐습니다</h2>
+        <p>아직 다운로드하거나 로컬에 저장하지 않았습니다. 원하면 각 후보에서 승인 취소를 누를 수 있습니다.</p>
+        <ul>${selected.map((candidate) => `<li>${escapeHtml(candidate.plainTitle || candidate.name)}</li>`).join("")}</ul>
+      </section>`
+    : "";
 
   resultBody.innerHTML = `
     <section class="intent-panel">
@@ -104,29 +105,36 @@ function renderSkillApproval(view) {
       <p>아래 후보는 GitHub에서 실시간으로 찾았습니다. 아직 다운로드하지 않았고, 로컬에도 저장하지 않았습니다.</p>
     </section>
 
+    ${selectedSummary}
+
     <div class="candidate-list">${candidates}</div>
   `;
 
-  document.querySelectorAll("[data-approve-skill]").forEach((button) => {
-    button.addEventListener("click", () => approveSkill(button.dataset.approveSkill));
+  document.querySelectorAll("[data-toggle-skill]").forEach((button) => {
+    button.addEventListener("click", () => toggleSkillApproval(button.dataset.toggleSkill));
   });
 }
 
 function renderCandidateCard(candidate) {
   const helps = candidate.helpsWith?.length ? candidate.helpsWith : ["이 요청에 도움이 될 가능성이 있는 AI 작업 보조"];
   const intentFit = candidate.intentFit || "검색어와 저장소 설명이 일부 맞아 후보로 가져왔습니다.";
+  const isApproved = approvedSkillIds.has(candidate.id);
   const approval = candidate.canApprove === false
     ? `<div class="blocked-box">권한이 큰 도구일 수 있어 이 후보는 다운로드하지 않습니다.</div>`
-    : `<div class="approval-box">
+    : `<div class="approval-box ${isApproved ? "approved" : ""}">
         <p>이 후보를 다음 단계에서 임시로 읽어봐도 될까요?</p>
         <p class="privacy-note">승인하면 파일 내용을 읽고 실제 사용해도 되는지 확인합니다. 이 단계에서는 로컬에 저장하지 않습니다.</p>
-        <button type="button" class="primary-action" data-approve-skill="${escapeHtml(candidate.id)}">승인하기</button>
+        <button type="button" class="${isApproved ? "secondary-action" : "primary-action"}" data-toggle-skill="${escapeHtml(candidate.id)}">
+          ${isApproved ? "승인 취소" : "승인하기"}
+        </button>
       </div>`;
+  const approvedBadge = isApproved ? `<span class="approved-badge">승인됨</span>` : "";
 
   return `
     <article class="candidate-card">
       <div class="candidate-head">
         <span class="verdict ${verdictClass(candidate.verdict?.label)}">${escapeHtml(candidate.verdict?.label || "검토 필요")}</span>
+        ${approvedBadge}
       </div>
       <h3>${escapeHtml(candidate.plainTitle || candidate.name)}</h3>
       <p class="plain-summary">${escapeHtml(candidate.plainSummary || "이 후보가 어떤 일을 하는지 추가 확인이 필요합니다.")}</p>
@@ -152,6 +160,19 @@ function renderCandidateCard(candidate) {
       ${approval}
     </article>
   `;
+}
+
+function currentApprovalView() {
+  return {
+    mode: "skill-approval",
+    intent: {
+      label: "현재 선택",
+      summary: lastInput,
+      needs: []
+    },
+    candidates: lastCandidates,
+    emptyMessage: "조건에 맞는 Skill 후보를 찾지 못했습니다."
+  };
 }
 
 function renderApproved(view) {

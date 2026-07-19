@@ -121,6 +121,7 @@ textarea {
 
 .intent-panel,
 .search-panel,
+.selected-panel,
 .candidate-card {
   padding: 18px;
   border: 1px solid var(--line);
@@ -133,6 +134,18 @@ textarea {
 
 .search-panel {
   background: var(--accent-soft);
+}
+
+.selected-panel {
+  border-left: 5px solid var(--accent);
+  background: #fbfdfc;
+}
+
+.selected-panel ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.6;
 }
 
 .tag-row,
@@ -198,6 +211,18 @@ textarea {
   color: var(--muted);
 }
 
+.approved-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #9bc8b9;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 .candidate-card h3 {
   margin-bottom: 8px;
   font-size: 1.2rem;
@@ -254,6 +279,11 @@ textarea {
   background: var(--soft);
 }
 
+.approval-box.approved {
+  border-color: #9bc8b9;
+  background: #fbfdfc;
+}
+
 .blocked-box {
   padding: 14px;
   border: 1px solid #e6b9ad;
@@ -275,6 +305,23 @@ textarea {
   font: inherit;
   font-weight: 800;
   cursor: pointer;
+}
+
+.secondary-action {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.secondary-action:hover,
+.secondary-action:focus-visible {
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 .error {
