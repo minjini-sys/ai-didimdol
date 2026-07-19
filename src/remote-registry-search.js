@@ -1,4 +1,4 @@
-const highRiskWords = [
+const blockedWords = [
   "browser automation",
   "desktop automation",
   "terminal",
@@ -13,7 +13,7 @@ const highRiskWords = [
   "crash"
 ];
 
-const mediumRiskWords = [
+const reviewWords = [
   "desktop",
   "browser",
   "api key",
@@ -96,43 +96,43 @@ function normalizeSkillCandidate(repo, query, route) {
 }
 
 function addPlainKoreanEvaluation(candidate) {
-  const risk = assessRisk(candidate);
+  const safety = assessBeforeDownload(candidate);
   return {
     ...candidate,
     plainTitle: makePlainTitle(candidate),
     plainSummary: makePlainSummary(candidate),
     helpsWith: explainHelpsWith(candidate),
     intentFit: explainIntentFit(candidate),
-    verdict: buildVerdict(candidate, risk),
-    riskLevel: risk.level,
-    riskReason: risk.reason,
-    riskFlags: risk.flags,
-    canApprove: risk.level !== "높음"
+    verdict: buildVerdict(candidate, safety),
+    precheckLevel: safety.level,
+    precheckReason: safety.reason,
+    precheckFlags: safety.flags,
+    canApprove: safety.level !== "blocked"
   };
 }
 
-function assessRisk(candidate) {
+function assessBeforeDownload(candidate) {
   const text = candidateText(candidate);
-  const highFlags = highRiskWords.filter((word) => text.includes(word));
-  if (highFlags.length > 0) {
+  const blockedFlags = blockedWords.filter((word) => text.includes(word));
+  if (blockedFlags.length > 0) {
     return {
-      level: "높음",
-      flags: highFlags,
-      reason: "브라우저, 컴퓨터, 터미널, 비밀번호, 자동 실행처럼 권한이 큰 표현이 있어 바로 다운로드하지 않습니다."
+      level: "blocked",
+      flags: blockedFlags,
+      reason: "브라우저, 컴퓨터, 터미널, 비밀번호, 자동 실행처럼 권한이 큰 표현이 있어 이 단계에서는 다운로드하지 않습니다."
     };
   }
 
-  const mediumFlags = mediumRiskWords.filter((word) => text.includes(word));
-  if (mediumFlags.length > 0) {
+  const reviewFlags = reviewWords.filter((word) => text.includes(word));
+  if (reviewFlags.length > 0) {
     return {
-      level: "보통",
-      flags: mediumFlags,
-      reason: "외부 도구나 자동화와 관련이 있어 다음 단계에서 파일 내용을 읽고 한 번 더 확인해야 합니다."
+      level: "review",
+      flags: reviewFlags,
+      reason: "외부 도구나 자동화와 관련된 표현이 있어 승인 후 파일 내용을 읽고 한 번 더 확인합니다."
     };
   }
 
   return {
-    level: "낮음",
+    level: "ok",
     flags: [],
     reason: "저장소 설명만 보면 큰 권한을 요구하는 표현은 보이지 않습니다."
   };
@@ -199,23 +199,23 @@ function explainIntentFit(candidate) {
   return `"${candidate.intentLabel}"와 관련된 후보를 찾기 위해 "${query}"로 검색했고, 저장소 이름이나 설명에서 관련 단어가 발견되었습니다.`;
 }
 
-function buildVerdict(candidate, risk) {
-  if (risk.level === "높음") {
+function buildVerdict(candidate, safety) {
+  if (safety.level === "blocked") {
     return {
       label: "다운로드 차단",
       reason: "권한이 큰 도구일 수 있어 사용자가 승인해도 이 단계에서는 다운로드하지 않습니다."
     };
   }
-  if (risk.level === "보통") {
+  if (safety.level === "review") {
     return {
       label: "검토 필요",
-      reason: "요청과 관련은 있어 보이지만, 다음 단계에서 README와 Skill 파일을 읽고 안전성을 한 번 더 확인해야 합니다."
+      reason: "요청과 관련은 있어 보입니다. 승인하면 파일 내용을 임시로 읽고 실제로 써도 되는지 한 번 더 확인합니다."
     };
   }
   if (candidate.score >= 70) {
     return {
       label: "검토 추천",
-      reason: "요청과 관련된 단어가 많고 큰 위험 표현이 없어 다음 단계에서 내용을 읽어볼 만합니다."
+      reason: "요청과 관련된 단어가 많고 큰 권한 표현이 없어 다음 단계에서 내용을 읽어볼 만합니다."
     };
   }
   return {

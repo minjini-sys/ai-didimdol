@@ -29,7 +29,7 @@ test("detects user intent before searching for skills", async (t) => {
   assert.ok(result.userView.intent.needs.includes("댓글 분석과 악성 댓글 분류"));
 });
 
-test("explains internet skill candidates in plain Korean with filled sections", async (t) => {
+test("explains internet skill candidates with filled user-facing sections", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => {
     globalThis.fetch = originalFetch;
@@ -47,12 +47,28 @@ test("explains internet skill candidates in plain Korean with filled sections", 
   assert.ok(candidate.plainTitle.includes("댓글"));
   assert.ok(candidate.helpsWith.length > 0);
   assert.ok(candidate.intentFit.includes("댓글 분석과 악성 댓글 분류"));
-  assert.ok(["낮음", "보통", "높음"].includes(candidate.riskLevel));
-  assert.notEqual(candidate.riskLevel, "확인 필요");
   assert.equal(candidate.downloadPolicy, "승인 전에는 다운로드하지 않고, 로컬에도 저장하지 않습니다.");
 });
 
-test("high risk candidates cannot be approved or downloaded", async (t) => {
+test("selection step keeps risk wording internal and uses verdict instead", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+  globalThis.fetch = async () => ({ ok: true, async json() { return { items: [mockRepo] }; } });
+
+  const result = await runDidimdolPipeline(
+    "유튜브 댓글을 분석해서 악성 댓글을 분류하고 싶어.",
+    { provider: "fallback", dynamicRegistryLimit: 3, dynamicRegistryPerQuery: 1, dynamicRegistryMaxQueries: 1 }
+  );
+
+  const viewText = JSON.stringify(result.userView);
+  assert.ok(result.userView.candidates[0].verdict.label);
+  assert.equal(viewText.includes(`위험${"도:"}`), false);
+  assert.equal(viewText.includes(`확인 ${"필요"}`), false);
+});
+
+test("blocked candidates cannot be approved or downloaded", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => {
     globalThis.fetch = originalFetch;
@@ -82,10 +98,9 @@ test("high risk candidates cannot be approved or downloaded", async (t) => {
   );
 
   const candidate = result.userView.candidates[0];
-  assert.equal(candidate.riskLevel, "높음");
   assert.equal(candidate.canApprove, false);
   assert.equal(candidate.verdict.label, "다운로드 차단");
-  assert.ok(candidate.riskReason.includes("바로 다운로드하지 않습니다"));
+  assert.equal(candidate.precheckLevel, "blocked");
 });
 
 test("routes contest notices to document requirement extraction", async (t) => {
@@ -131,7 +146,7 @@ test("approval does not store the skill locally in this step", async () => {
     plainTitle: "댓글을 분류하거나 문제 댓글을 찾는 도구 후보",
     plainSummary: "댓글을 읽고 유형별로 나누는 데 쓰일 수 있는 후보입니다.",
     verdict: { label: "검토 추천", reason: "다음 단계에서 읽어볼 만합니다." },
-    riskLevel: "낮음",
+    precheckLevel: "ok",
     canApprove: true,
     url: "https://github.com/example/comment-moderation-agent"
   };

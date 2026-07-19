@@ -116,10 +116,10 @@ function renderCandidateCard(candidate) {
   const helps = candidate.helpsWith?.length ? candidate.helpsWith : ["이 요청에 도움이 될 가능성이 있는 AI 작업 보조"];
   const intentFit = candidate.intentFit || "검색어와 저장소 설명이 일부 맞아 후보로 가져왔습니다.";
   const approval = candidate.canApprove === false
-    ? `<div class="blocked-box">위험도가 높아 이 후보는 다운로드하지 않습니다.</div>`
+    ? `<div class="blocked-box">권한이 큰 도구일 수 있어 이 후보는 다운로드하지 않습니다.</div>`
     : `<div class="approval-box">
         <p>이 후보를 다음 단계에서 임시로 읽어봐도 될까요?</p>
-        <p class="privacy-note">승인 전에는 다운로드하지 않습니다. 승인해도 이 단계에서는 로컬에 저장하지 않습니다.</p>
+        <p class="privacy-note">승인하면 파일 내용을 읽고 실제 사용해도 되는지 확인합니다. 이 단계에서는 로컬에 저장하지 않습니다.</p>
         <button type="button" class="primary-action" data-approve-skill="${escapeHtml(candidate.id)}">승인하기</button>
       </div>`;
 
@@ -127,7 +127,6 @@ function renderCandidateCard(candidate) {
     <article class="candidate-card">
       <div class="candidate-head">
         <span class="verdict ${verdictClass(candidate.verdict?.label)}">${escapeHtml(candidate.verdict?.label || "검토 필요")}</span>
-        <span class="risk ${riskClass(candidate.riskLevel)}">위험도: ${escapeHtml(candidate.riskLevel || "보통")}</span>
       </div>
       <h3>${escapeHtml(candidate.plainTitle || candidate.name)}</h3>
       <p class="plain-summary">${escapeHtml(candidate.plainSummary || "이 후보가 어떤 일을 하는지 추가 확인이 필요합니다.")}</p>
@@ -142,7 +141,6 @@ function renderCandidateCard(candidate) {
         <p>${escapeHtml(intentFit)}</p>
       </section>
 
-      <p class="risk-reason">${escapeHtml(candidate.riskReason || "")}</p>
       <p class="verdict-reason">${escapeHtml(candidate.verdict?.reason || "")}</p>
 
       <div class="source-line">
@@ -185,12 +183,6 @@ function verdictClass(label) {
   if (label === "다운로드 차단") return "block";
   if (label === "검토 필요") return "hold";
   return "weak";
-}
-
-function riskClass(label) {
-  if (label === "낮음") return "low";
-  if (label === "높음") return "high";
-  return "medium";
 }
 
 function renderError(message) {
