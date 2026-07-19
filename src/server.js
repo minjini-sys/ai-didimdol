@@ -18,10 +18,8 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 400, { error: "input is required" });
       }
       const result = await runDidimdolPipeline(payload.input, config, {
-        answers: payload.answers || {},
         approvedSkillIds: payload.approvedSkillIds || [],
-        rejectedSkillIds: payload.rejectedSkillIds || [],
-        skillConsent: payload.skillConsent || ""
+        candidates: payload.candidates || []
       });
       return sendJson(res, 200, result);
     }

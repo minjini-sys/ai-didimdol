@@ -10,28 +10,23 @@
     <main class="shell">
       <section class="intro">
         <p class="eyebrow">AI 디딤돌</p>
-        <h1>하고 싶은 일을 말하면 AI가 필요한 과정을 대신 잡아줍니다.</h1>
-        <p>어려운 도구 이름을 몰라도 괜찮습니다. 필요한 정보는 AI가 하나씩 묻고, 도움 기능을 쓰기 전에는 먼저 이유를 설명하고 확인을 받습니다.</p>
+        <h1>AI 활용 격차를 줄이기 위해, 먼저 의도를 읽고 맞는 Skill을 찾아줍니다.</h1>
+        <p>전공자는 문제를 보고 어떤 도구와 Skill을 써야 할지 압니다. 비전공자는 그 지점에서 막힙니다. AI 디딤돌은 사용자의 프롬프트를 해석하고, 인터넷에서 적절한 Skill 후보를 찾은 뒤, 사용 전에 먼저 승인을 받습니다.</p>
       </section>
 
       <section class="chat">
         <form id="routeForm" class="composer" aria-label="AI 디딤돌 입력">
-          <textarea id="userInput" rows="3" placeholder="예: AI로 회의 음성을 자동으로 받아쓰고 요약한 다음 Notion에 정리하는 도구 조합을 찾고 싶어."></textarea>
+          <textarea id="userInput" rows="3" placeholder="예: 유튜브 댓글을 분석해서 악성 댓글을 분류하고 결과를 구글시트에 저장하고 싶어."></textarea>
           <button type="submit" class="send-button" aria-label="보내기">
             <span aria-hidden="true">↑</span>
           </button>
         </form>
 
-        <section id="answer" class="answer" aria-live="polite">
+        <section class="answer" aria-live="polite">
           <div id="resultBody" class="result-body">
-            <p class="empty">원하는 일을 한 문장으로 적어보세요.</p>
+            <p class="empty">해결하고 싶은 문제를 한 문장으로 입력해보세요.</p>
           </div>
         </section>
-
-        <details id="routerDetails" class="router-details">
-          <summary>어떻게 만들었는지 보기</summary>
-          <div id="routerTrace" class="trace-list"></div>
-        </details>
       </section>
     </main>
 

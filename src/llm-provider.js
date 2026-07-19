@@ -10,9 +10,6 @@ function fallbackProvider() {
     name: "fallback",
     async classify(_input, fallback) {
       return fallback;
-    },
-    async plan(_input, _route, _matches, _safety, fallback) {
-      return fallback;
     }
   };
 }
@@ -26,14 +23,6 @@ function openaiProvider(config) {
         return { ...fallback, ...safeJson(json), model: config.openaiModel };
       } catch {
         return { ...fallback, model: "fallback-router" };
-      }
-    },
-    async plan(input, route, matches, safety, fallback) {
-      try {
-        const json = await callOpenAi(config, plannerPrompt(input, route, matches, safety, fallback));
-        return { ...fallback, ...safeJson(json) };
-      } catch {
-        return fallback;
       }
     }
   };
@@ -49,14 +38,6 @@ function geminiProvider(config) {
       } catch {
         return { ...fallback, model: "fallback-router" };
       }
-    },
-    async plan(input, route, matches, safety, fallback) {
-      try {
-        const json = await callGemini(config, plannerPrompt(input, route, matches, safety, fallback));
-        return { ...fallback, ...safeJson(json) };
-      } catch {
-        return fallback;
-      }
     }
   };
 }
@@ -70,14 +51,6 @@ function ollamaProvider(config) {
         return { ...fallback, ...safeJson(json), model: config.ollamaModel };
       } catch {
         return { ...fallback, model: "fallback-router" };
-      }
-    },
-    async plan(input, route, matches, safety, fallback) {
-      try {
-        const json = await callOllama(config, plannerPrompt(input, route, matches, safety, fallback));
-        return { ...fallback, ...safeJson(json) };
-      } catch {
-        return fallback;
       }
     }
   };
@@ -132,33 +105,15 @@ async function callOllama(config, prompt) {
 
 function routerPrompt(input, fallback) {
   return [
-    "사용자 입력을 AI 디딤돌 라우터용 JSON으로 분류하세요.",
-    "taskTypes는 understand, verify, create, compare, plan, learn, organize, connect 중 하나 이상입니다.",
-    "riskLevel은 low, medium, high, blocked 중 하나입니다.",
-    "supported는 supported, partial, unsupported 중 하나입니다.",
-    "capabilities는 사용자가 원하는 최종 결과를 만들 능력명을 한국어 배열로 작성하세요.",
-    "가능하면 다음 능력명 중에서 고르세요: 쉬운 말 변환, 위험 신호 탐지, 공식 출처 확인, 개인정보 보호, 다음 행동 안내, 아이디어 생성, 아이디어 검증, 홍보 문구 생성, 실행 계획 생성, 댓글 분석, 악성 댓글 분류, 스프레드시트 저장, 회의 받아쓰기, 회의 요약, Notion 정리, 도구 조합 추천, 문서 작성, 일정 관리, 저장소 관리.",
+    "사용자 프롬프트의 의도를 AI 활용 보조 서비스용 JSON으로 분류하세요.",
+    "이 서비스의 목적은 비전공자가 전공자처럼 적절한 AI Skill을 찾아 더 좋은 답변으로 이어지게 돕는 것입니다.",
+    "반드시 다음 필드를 출력하세요: intent, intentId, intentLabel, detectedNeeds, searchTerms, confidence.",
+    "intentLabel은 사용자가 하려는 일을 쉬운 한국어로 요약하세요.",
+    "detectedNeeds는 필요한 능력을 한국어 배열로 작성하세요.",
+    "searchTerms는 GitHub에서 Skill 후보를 찾기 좋은 영어 검색어 배열로 작성하세요.",
     "반드시 JSON만 출력하세요.",
     `Fallback example: ${JSON.stringify(fallback)}`,
     `Input: ${input}`
-  ].join("\n");
-}
-
-function plannerPrompt(input, route, matches, safety, fallback) {
-  return [
-    "AI 디딤돌의 사용자용 결과를 JSON으로 작성하세요.",
-    "title, plainAnswer, steps, deliverables를 출력하세요.",
-    "deliverables가 가장 중요합니다. 사용자가 실제로 원한 최종 산출물을 바로 작성하세요.",
-    "steps는 사용자가 궁금해할 때 볼 수 있는 처리 과정입니다.",
-    "deliverables 형식은 [{\"title\":\"섹션 제목\",\"items\":[\"항목1\",\"항목2\"]}]입니다.",
-    "사용자는 skills, MCP, agent를 모른다고 가정하고 쉽고 구체적으로 작성하세요.",
-    "안전 경고는 위험한 요청일 때만 작성하세요. 일반 요청에는 위험하다는 말을 하지 마세요.",
-    "반드시 JSON만 출력하세요.",
-    `Input: ${input}`,
-    `Route: ${JSON.stringify(route)}`,
-    `Matches: ${JSON.stringify(matches)}`,
-    `Safety: ${JSON.stringify(safety)}`,
-    `Fallback example: ${JSON.stringify(fallback)}`
   ].join("\n");
 }
 
