@@ -147,10 +147,11 @@ function plannerPrompt(input, route, matches, safety, fallback) {
   return [
     "AI 디딤돌의 사용자용 결과를 JSON으로 작성하세요.",
     "title, plainAnswer, steps, deliverables를 출력하세요.",
-    "steps는 AI가 어떤 Skill/MCP/Agent 조합으로 처리하는지 쉬운 말로 보여줍니다.",
-    "deliverables는 사용자가 실제로 원한 최종 산출물입니다. 예: 홍보 문구, 실행 계획, 가족에게 보낼 문장, 검증 질문.",
+    "deliverables가 가장 중요합니다. 사용자가 실제로 원한 최종 산출물을 바로 작성하세요.",
+    "steps는 사용자가 궁금해할 때 볼 수 있는 처리 과정입니다.",
     "deliverables 형식은 [{\"title\":\"섹션 제목\",\"items\":[\"항목1\",\"항목2\"]}]입니다.",
     "사용자는 skills, MCP, agent를 모른다고 가정하고 쉽고 구체적으로 작성하세요.",
+    "안전 경고는 위험한 요청일 때만 작성하세요. 일반 요청에는 위험하다는 말을 하지 마세요.",
     "반드시 JSON만 출력하세요.",
     `Input: ${input}`,
     `Route: ${JSON.stringify(route)}`,

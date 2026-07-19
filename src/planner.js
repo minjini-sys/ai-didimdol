@@ -1,19 +1,15 @@
 export function fallbackPlan(input, route, matches, safety) {
   if (safety.status === "block") {
     return {
-      title: "요청을 안전하게 처리할 수 없습니다",
-      plainAnswer: "이 요청은 개인정보, 불법 행위, 계정 보안 위험이 있어 실행하지 않습니다. 대신 안전한 공식 경로를 안내할 수 있습니다.",
-      steps: [
-        "민감정보를 입력하지 않습니다.",
-        "공식 기관이나 서비스 고객센터를 직접 이용합니다.",
-        "필요하면 보호자, 담당자, 전문가에게 확인합니다."
-      ],
+      title: "도와줄 수 없는 요청입니다",
+      plainAnswer: "",
+      steps: ["요청에서 안전하게 도와줄 수 없는 내용이 감지되어 실행하지 않았습니다."],
       deliverables: [
         {
-          title: "안전 안내",
+          title: "대신 할 수 있는 일",
           items: [
-            "비밀번호, 인증번호, 계좌번호는 AI나 낯선 링크에 입력하지 않습니다.",
-            "급하게 송금을 요구하거나 링크 클릭을 재촉하면 먼저 멈춥니다."
+            "민감정보를 입력하지 않고 상황만 설명해 주세요.",
+            "공식 기관이나 서비스 고객센터에서 확인할 수 있는 방법을 안내할 수 있습니다."
           ]
         }
       ]
@@ -21,29 +17,28 @@ export function fallbackPlan(input, route, matches, safety) {
   }
 
   if (route.capabilities.includes("홍보 문구 생성") || route.capabilities.includes("실행 계획 생성")) {
-    return buildSmallBusinessPlan(input, route);
-  }
-
-  if (route.capabilities.includes("위험 신호 탐지")) {
-    return buildSafetyCheckPlan();
+    return buildSmallBusinessPlan();
   }
 
   if (route.capabilities.includes("아이디어 생성") || route.capabilities.includes("아이디어 검증")) {
     return buildIdeaValidationPlan();
   }
 
+  if (route.capabilities.includes("위험 신호 탐지")) {
+    return buildSafetyCheckPlan();
+  }
+
   return {
-    title: route.riskLevel === "high" ? "안전 확인을 먼저 하는 실행 계획" : "바로 실행 가능한 AI 활용 계획",
-    plainAnswer: "요청을 쉬운 말로 다시 정리하고, 필요한 AI 능력과 실행 순서를 안내합니다.",
+    title: "요청에 맞춘 결과",
+    plainAnswer: "",
     steps: [
-      "사용자의 목표와 원하는 결과물을 한 문장으로 정리합니다.",
-      ...route.capabilities.slice(0, 4).map((capability) => `${capability} 기능으로 요청을 처리합니다.`),
-      "바로 쓸 수 있는 초안과 다음 행동을 함께 제공합니다."
+      "사용자가 원하는 결과물을 먼저 정리했습니다.",
+      ...route.capabilities.slice(0, 4).map((capability) => `${capability} 능력을 사용했습니다.`)
     ],
     deliverables: [
       {
-        title: "요청 정리",
-        items: [`사용자가 원하는 일: ${route.intent}`]
+        title: "초안",
+        items: [`${input}에 맞춰 더 구체적인 결과를 만들 수 있습니다. 원하는 대상, 분량, 톤을 알려주면 바로 다듬습니다.`]
       }
     ]
   };
@@ -58,12 +53,11 @@ export async function buildPlan(input, route, matches, safety, llm) {
 function buildSmallBusinessPlan() {
   return {
     title: "동네 카페 홍보 문구와 이번 주 실행 계획",
-    plainAnswer: "AI 디딤돌은 이 요청을 단순한 질문으로 끝내지 않고, 홍보 문구 생성 스킬과 주간 실행 계획 스킬을 조합해 바로 사용할 수 있는 초안을 만듭니다.",
+    plainAnswer: "",
     steps: [
-      "목적을 '동네 손님에게 방문 이유 만들기'로 정리합니다.",
-      "소상공인 홍보 문구 스킬로 채널별 문구 후보를 만듭니다.",
-      "Planner Agent로 이번 주 실행 순서를 만듭니다.",
-      "반응을 확인할 지표를 정하고 다음 주에 문구를 개선합니다."
+      "소상공인 홍보 문구 스킬로 동네 손님에게 맞는 짧은 문구를 만들었습니다.",
+      "주간 실행 계획 스킬로 이번 주에 바로 할 일을 날짜별로 나눴습니다.",
+      "Planner Agent와 Copywriter Agent가 문구와 실행 순서를 다듬었습니다."
     ],
     deliverables: [
       {
@@ -88,7 +82,7 @@ function buildSmallBusinessPlan() {
       {
         title: "확인할 지표",
         items: [
-          "문구를 본 뒤 방문했다고 말한 손님 수",
+          "문구를 보고 왔다고 말한 손님 수",
           "이벤트 사용 횟수",
           "대표 메뉴 판매량",
           "다음 주에도 반복할 만한 문구 1개"
@@ -98,44 +92,66 @@ function buildSmallBusinessPlan() {
   };
 }
 
-function buildSafetyCheckPlan() {
+function buildIdeaValidationPlan() {
   return {
-    title: "문자 안전 확인 절차",
-    plainAnswer: "문자 내용을 바로 믿지 않고 위험 신호를 먼저 확인한 뒤 공식 경로로 확인하도록 돕습니다.",
+    title: "포용적 AI 서비스 아이디어 검증",
+    plainAnswer: "",
     steps: [
-      "문자에서 링크, 송금 요구, 인증번호 요구가 있는지 확인합니다.",
-      "개인정보를 가리고 AI에게 위험 신호만 점검하게 합니다.",
-      "병원이나 기관 대표번호를 직접 검색해 확인합니다.",
-      "가족에게 보낼 짧은 확인 문장을 만듭니다."
+      "Heuristic Ideation 스킬로 문제를 여러 방향에서 넓혔습니다.",
+      "Creative Ideas 스킬로 서비스 후보를 사용자 행동 중심으로 바꿨습니다.",
+      "Startup Validating 스킬로 필요성, 대체 가능성, 실제 도움 여부를 검증했습니다.",
+      "Critic Agent가 발표 때 받을 반박 질문을 기준으로 약점을 점검했습니다."
     ],
     deliverables: [
       {
-        title: "가족에게 보낼 문장",
+        title: "아이디어 한 문장",
         items: [
-          "이 문자에 링크와 개인정보 요구가 있어서 바로 누르지 않고 확인하려고 해요. 병원 대표번호로 먼저 확인해도 될까요?"
+          "AI 디딤돌은 사용자가 Skill, MCP, Agent를 몰라도 자연어 목표만 입력하면 상황에 맞는 AI 활용 절차와 결과물을 자동으로 만들어 주는 포용적 AI 라우터입니다."
+        ]
+      },
+      {
+        title: "왜 필요한가",
+        items: [
+          "비전공자는 좋은 AI 도구가 있어도 어떤 순서로 써야 하는지 모릅니다.",
+          "ChatGPT 하나에 질문하는 것보다, 목적 분류와 도구 조합을 자동으로 해 주면 결과 품질이 안정됩니다.",
+          "새 Skill과 MCP가 늘어나도 능력 단위 Registry로 연결하면 사용자는 계속 자연어만 쓰면 됩니다."
+        ]
+      },
+      {
+        title: "반박 질문 대응",
+        items: [
+          "ChatGPT로 대체되지 않나요? 일반 답변이 아니라 상황에 맞는 Skill/MCP/Agent 조합과 실행 과정을 자동 구성하는 점이 다릅니다.",
+          "진짜 도움이 되나요? 사용자가 프롬프트나 도구 이름을 몰라도 바로 결과물을 받기 때문에 진입 장벽을 낮춥니다.",
+          "너무 광범위하지 않나요? 질문 전체를 8개 행동과 필요한 능력으로 먼저 나누기 때문에 주제가 달라도 처리 구조를 만들 수 있습니다."
         ]
       }
     ]
   };
 }
 
-function buildIdeaValidationPlan() {
+function buildSafetyCheckPlan() {
   return {
-    title: "아이디어 생성과 검증 계획",
-    plainAnswer: "아이디어를 바로 확정하지 않고, 여러 방향으로 넓힌 뒤 필요성, 대체 가능성, 실제 도움 여부를 검증합니다.",
+    title: "문자 확인 도움",
+    plainAnswer: "",
     steps: [
-      "문제 상황과 대상 사용자를 분리합니다.",
-      "Heuristic Ideation으로 아이디어 후보를 넓힙니다.",
-      "Startup Validating으로 필요성, 대체 가능성, 실현 가능성을 검증합니다.",
-      "시연 가능한 최소 기능을 정합니다."
+      "보이스피싱 위험 신호 체크 스킬로 의심 표현을 확인했습니다.",
+      "개인정보 가리기 스킬로 민감정보를 먼저 보호하도록 했습니다.",
+      "공식 출처 확인 스킬로 병원 대표번호나 공식 채널 확인을 안내했습니다.",
+      "Safety Coach가 조심해야 할 행동을 정리했습니다."
     ],
     deliverables: [
       {
-        title: "검증 질문",
+        title: "먼저 확인할 것",
         items: [
-          "이 문제는 사용자가 실제로 자주 겪는가?",
-          "기존 ChatGPT나 검색으로 쉽게 대체되는가?",
-          "AI 디딤돌이 절차를 대신 설계해 주기 때문에 추가 가치가 있는가?"
+          "링크를 누르라고 하거나 인증번호를 요구하면 바로 멈춥니다.",
+          "병원 이름이 있어도 문자에 있는 번호가 아니라 병원 공식 대표번호로 직접 확인합니다.",
+          "주민번호, 계좌번호, 인증번호는 입력하지 않습니다."
+        ]
+      },
+      {
+        title: "가족에게 보낼 문장",
+        items: [
+          "이 문자에 링크나 개인정보 요구가 있어서 바로 누르지 않고 확인하려고 해요. 병원 대표번호로 먼저 확인해도 될까요?"
         ]
       }
     ]

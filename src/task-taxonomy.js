@@ -9,7 +9,7 @@ export const TASK_TYPES = [
     id: "verify",
     label: "확인하기",
     description: "진짜인지, 맞는지, 위험한지 검증한다.",
-    keywords: ["확인", "진짜", "가짜", "위험", "사기", "보이스피싱", "검증", "맞는지", "필요할까", "대체"]
+    keywords: ["확인", "진짜", "가짜", "위험", "사기", "보이스피싱", "검증", "맞는지", "필요할까", "대체", "도움"]
   },
   {
     id: "create",
@@ -45,7 +45,7 @@ export const TASK_TYPES = [
     id: "connect",
     label: "연결하기",
     description: "파일, 일정, GitHub, 공공데이터 같은 외부 도구와 연결한다.",
-    keywords: ["파일", "깃허브", "github", "캘린더", "일정", "공공데이터", "연결", "저장"]
+    keywords: ["파일", "깃허브", "github", "캘린더", "일정 등록", "공공데이터", "연결", "저장", "보내줘"]
   }
 ];
 
