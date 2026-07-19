@@ -6,6 +6,7 @@ let lastCandidates = [];
 let lastInput = "";
 let approvedSkillIds = new Set();
 let lastSkillApprovalView = null;
+let lastSkillReviewView = null;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -91,6 +92,11 @@ function render(view) {
 
   if (view.mode === "skill-review") {
     renderSkillReview(view);
+    return;
+  }
+
+  if (view.mode === "generated-result") {
+    renderGeneratedResult(view.result);
     return;
   }
 
@@ -191,8 +197,9 @@ function renderCandidateCard(candidate) {
 }
 
 function renderSkillReview(view) {
+  lastSkillReviewView = view;
   const inspected = view.inspected || [];
-  const result = view.result || {};
+  const usable = view.usable || [];
   resultBody.innerHTML = `
     <section class="search-panel">
       <p class="step-label">3. Skill 임시 확인</p>
@@ -205,10 +212,46 @@ function renderSkillReview(view) {
       ${inspected.map(renderInspectedSkill).join("")}
     </div>
 
+    <section class="selected-panel">
+      <p class="step-label">결과물 생성</p>
+      <h2>${usable.length ? `${usable.length}개 Skill로 결과물을 만들 수 있습니다` : "사용 가능한 Skill이 없습니다"}</h2>
+      <p>${usable.length ? "아래 버튼을 누르면 확인된 Skill을 바탕으로 바로 쓸 결과물을 만듭니다." : "다른 후보를 선택하거나 다시 검색해야 합니다."}</p>
+      ${usable.length ? `<button type="button" class="primary-action next-action" data-generate-result>결과물 생성</button>` : ""}
+    </section>
+  `;
+  document.querySelector("[data-generate-result]")?.addEventListener("click", generateResult);
+}
+
+async function generateResult() {
+  const usableSkills = lastSkillReviewView?.usable || [];
+  if (!usableSkills.length) return;
+
+  setLoading("확인된 Skill을 바탕으로 결과물을 만들고 있습니다.");
+
+  const response = await fetch("/api/generate-result", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      input: lastInput,
+      usableSkills
+    })
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    renderError(data.error || "결과물 생성 중 문제가 생겼습니다.");
+    return;
+  }
+
+  render(data.userView);
+}
+
+function renderGeneratedResult(result = {}) {
+  resultBody.innerHTML = `
     <section class="result-panel">
       <p class="step-label">4. 결과물</p>
       <h2>${escapeHtml(result.title || "바로 쓸 결과물")}</h2>
-      <pre>${escapeHtml(result.body || "사용 가능한 Skill을 찾지 못했습니다.")}</pre>
+      <pre>${escapeHtml(result.body || "결과물을 만들지 못했습니다.")}</pre>
     </section>
   `;
 }

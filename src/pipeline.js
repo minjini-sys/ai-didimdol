@@ -1,7 +1,7 @@
 import { createLlmProvider } from "./llm-provider.js";
 import { routeInput } from "./router.js";
 import { searchRemoteSkills } from "./remote-registry-search.js";
-import { inspectApprovedSkills } from "./skill-inspector.js";
+import { createSkillBasedResult, inspectApprovedSkills } from "./skill-inspector.js";
 
 export async function runDidimdolPipeline(input, config, options = {}) {
   const llm = createLlmProvider(config);
@@ -58,11 +58,26 @@ function buildSkillApprovalView(route, skillSearch) {
 
 async function buildApprovedView(input, route, approvedSkillIds, candidates, config, llm) {
   const approved = candidates.filter((candidate) => approvedSkillIds.includes(candidate.id));
-  const review = await inspectApprovedSkills(input, route, approved, config, llm);
+  const review = await inspectApprovedSkills(input, route, approved, config);
   return {
     input,
     route,
     skillSearch: { source: "github", searchedQueries: route.searchTerms || [], candidates },
     userView: review
+  };
+}
+
+export async function generateDidimdolResult(input, config, options = {}) {
+  const llm = createLlmProvider(config);
+  const route = await routeInput(input, llm);
+  const usable = Array.isArray(options.usableSkills) ? options.usableSkills : [];
+  const result = await createSkillBasedResult(input, route, usable, llm);
+  return {
+    input,
+    route,
+    userView: {
+      mode: "generated-result",
+      result
+    }
   };
 }

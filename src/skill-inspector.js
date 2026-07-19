@@ -19,19 +19,21 @@ const dangerousPatterns = [
   { word: "browser automation", reason: "브라우저를 대신 조작하는 기능이 보입니다." }
 ];
 
-export async function inspectApprovedSkills(input, route, approved, config, llm) {
+export async function inspectApprovedSkills(input, route, approved, config) {
   const inspected = await Promise.all(approved.map((candidate) => inspectCandidate(candidate, route, config)));
   const usable = inspected.filter((item) => item.decision === "사용 가능");
-  const result = await buildUsableResult(input, route, usable, llm);
 
   return {
     mode: "skill-review",
     title: "Skill 내용을 임시로 확인했습니다",
     summary: `${approved.length}개 후보를 확인했고, ${usable.length}개를 결과 작성에 사용할 수 있다고 판단했습니다.`,
     inspected,
-    usable,
-    result
+    usable
   };
+}
+
+export async function createSkillBasedResult(input, route, usable, llm) {
+  return buildUsableResult(input, route, usable, llm);
 }
 
 async function inspectCandidate(candidate, route, config) {

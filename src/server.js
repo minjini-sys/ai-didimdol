@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getConfig } from "./config.js";
-import { runDidimdolPipeline } from "./pipeline.js";
+import { generateDidimdolResult, runDidimdolPipeline } from "./pipeline.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.resolve(__dirname, "../public");
@@ -20,6 +20,18 @@ const server = http.createServer(async (req, res) => {
       const result = await runDidimdolPipeline(payload.input, config, {
         approvedSkillIds: payload.approvedSkillIds || [],
         candidates: payload.candidates || []
+      });
+      return sendJson(res, 200, result);
+    }
+
+    if (req.method === "POST" && req.url === "/api/generate-result") {
+      const body = await readBody(req);
+      const payload = JSON.parse(body || "{}");
+      if (!payload.input || typeof payload.input !== "string") {
+        return sendJson(res, 400, { error: "input is required" });
+      }
+      const result = await generateDidimdolResult(payload.input, config, {
+        usableSkills: payload.usableSkills || []
       });
       return sendJson(res, 200, result);
     }

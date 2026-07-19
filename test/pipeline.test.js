@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { runDidimdolPipeline } from "../src/pipeline.js";
+import { generateDidimdolResult, runDidimdolPipeline } from "../src/pipeline.js";
 
 const mockRepo = {
   name: "comment-moderation-agent",
@@ -225,7 +225,8 @@ test("approval reads candidate files temporarily and builds a review", async (t)
   assert.equal(result.userView.inspected.length, 1);
   assert.equal(result.userView.inspected[0].decision, "사용 가능");
   assert.deepEqual(result.userView.inspected[0].checkedFiles, ["README.md"]);
-  assert.ok(result.userView.result.body.includes("사용자 요청"));
+  assert.equal(result.userView.result, undefined);
+  assert.equal(result.userView.usable.length, 1);
 });
 
 test("approval can inspect multiple selected skills", async (t) => {
@@ -284,4 +285,27 @@ test("approval can inspect multiple selected skills", async (t) => {
   assert.equal(result.userView.mode, "skill-review");
   assert.equal(result.userView.inspected.length, 2);
   assert.deepEqual(result.userView.inspected.map((candidate) => candidate.id), candidates.map((candidate) => candidate.id));
+});
+
+test("result generation is separated from skill inspection", async () => {
+  const usableSkills = [
+    {
+      id: "github:example/comment-moderation-agent",
+      name: "comment-moderation-agent",
+      fullName: "example/comment-moderation-agent",
+      plainTitle: "댓글을 분류하거나 문제 댓글을 찾는 도구 후보",
+      checkedFiles: ["README.md"],
+      evidence: "Comment moderation and classification workflow.",
+      decision: "사용 가능"
+    }
+  ];
+
+  const result = await generateDidimdolResult(
+    "유튜브 댓글을 분석해서 악성 댓글을 분류하고 싶어.",
+    { provider: "fallback" },
+    { usableSkills }
+  );
+
+  assert.equal(result.userView.mode, "generated-result");
+  assert.ok(result.userView.result.body.includes("사용자 요청"));
 });
