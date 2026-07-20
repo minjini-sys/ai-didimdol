@@ -90,3 +90,5 @@ public/
   styles.css
   app.js
 ```
+
+<!-- contribution: 2026-07-20 -->
