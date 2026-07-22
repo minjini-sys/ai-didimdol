@@ -8,7 +8,7 @@ export async function runDidimdolPipeline(input, config, options = {}) {
   const route = await routeInput(input, llm);
 
   if (options.approvedSkillIds?.length) {
-    return buildApprovedView(input, route, options.approvedSkillIds, options.candidates || [], config, llm);
+    return buildApprovedView(input, route, options.approvedSkillIds, options.candidates || [], config);
   }
 
   const skillSearch = await searchRemoteSkills(route, {
@@ -27,7 +27,7 @@ export async function runDidimdolPipeline(input, config, options = {}) {
 
   return {
     input,
-    route,
+    route: publicRoute(route),
     skillSearch,
     userView: buildSkillApprovalView(route, skillSearch)
   };
@@ -56,12 +56,12 @@ function buildSkillApprovalView(route, skillSearch) {
   };
 }
 
-async function buildApprovedView(input, route, approvedSkillIds, candidates, config, llm) {
+async function buildApprovedView(input, route, approvedSkillIds, candidates, config) {
   const approved = candidates.filter((candidate) => approvedSkillIds.includes(candidate.id));
   const review = await inspectApprovedSkills(input, route, approved, config);
   return {
     input,
-    route,
+    route: publicRoute(route),
     skillSearch: { source: "github", searchedQueries: route.searchTerms || [], candidates },
     userView: review
   };
@@ -74,10 +74,15 @@ export async function generateDidimdolResult(input, config, options = {}) {
   const result = await createSkillBasedResult(input, route, usable, llm);
   return {
     input,
-    route,
+    route: publicRoute(route),
     userView: {
       mode: "generated-result",
       result
     }
   };
+}
+
+function publicRoute(route) {
+  const { split: _split, ...rest } = route;
+  return rest;
 }

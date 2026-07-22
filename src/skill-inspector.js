@@ -10,23 +10,23 @@ const candidateFiles = [
 
 const dangerousPatterns = [
   { word: "rm -rf", reason: "파일을 강제로 삭제하는 명령이 보입니다." },
-  { word: "sudo", reason: "관리자 권한을 요구할 수 있습니다." },
+  { word: "sudo", reason: "관리자 권한을 요구할 가능성이 있습니다." },
   { word: "password", reason: "비밀번호와 관련된 처리가 보입니다." },
   { word: "token", reason: "토큰 같은 민감한 값과 관련된 처리가 보입니다." },
   { word: "credential", reason: "인증 정보와 관련된 처리가 보입니다." },
   { word: "shell", reason: "명령 실행과 관련된 처리가 보입니다." },
   { word: "terminal", reason: "터미널 명령 실행과 관련된 처리가 보입니다." },
-  { word: "browser automation", reason: "브라우저를 대신 조작하는 기능이 보입니다." }
+  { word: "browser automation", reason: "브라우저를 직접 조작하는 기능이 보입니다." }
 ];
 
-export async function inspectApprovedSkills(input, route, approved, config) {
+export async function inspectApprovedSkills(_input, route, approved, config) {
   const inspected = await Promise.all(approved.map((candidate) => inspectCandidate(candidate, route, config)));
   const usable = inspected.filter((item) => item.decision === "사용 가능");
 
   return {
     mode: "skill-review",
-    title: "Skill 내용을 임시로 확인했습니다",
-    summary: `${approved.length}개 후보를 확인했고, ${usable.length}개를 결과 작성에 사용할 수 있다고 판단했습니다.`,
+    title: "선택한 Skill을 확인했습니다",
+    summary: `${approved.length}개 후보를 임시로 읽고, ${usable.length}개를 결과 작성에 사용할 수 있다고 판단했습니다.`,
     inspected,
     usable
   };
@@ -40,11 +40,11 @@ async function inspectCandidate(candidate, route, config) {
   const files = await readCandidateFiles(candidate, config);
   const joined = files.map((file) => `${file.path}\n${file.text}`).join("\n\n").slice(0, 12000);
   const flags = findDangerFlags(joined || candidate.originalDescription || "");
-  const relevance = scoreRelevance(route, `${candidate.fullName} ${candidate.originalDescription} ${joined}`);
+  const relevance = scoreRelevance(route, `${candidate.fullName} ${candidate.originalDescription || ""} ${joined}`);
   const hasSkillFile = files.some((file) => /skill\.md$/i.test(file.path));
 
   let decision = "사용 가능";
-  let reason = "요청과 관련된 설명을 확인했고, 큰 권한을 요구하는 내용은 보이지 않았습니다.";
+  let reason = "요청과 관련된 설명을 확인했고, 과한 권한을 요구하는 내용은 보이지 않았습니다.";
   if (!files.length) {
     decision = "보류";
     reason = "README나 SKILL 파일을 읽지 못해 실제 내용을 확인하지 못했습니다.";
@@ -160,11 +160,11 @@ async function buildUsableResult(input, route, usable, llm) {
     body: [
       `${route.intentLabel} 요청을 처리하기 위해 ${usable.length}개 Skill 후보를 참고했습니다.`,
       "",
-      "1. 먼저 원문에서 조건, 대상, 제출물, 마감일을 분리합니다.",
+      "1. 먼저 자료에서 핵심 정보와 조건을 분리합니다.",
       "2. 빠진 정보가 있으면 사용자에게 짧게 질문합니다.",
-      "3. 확인된 조건을 체크리스트로 바꾸고, 바로 복사할 수 있는 형태로 정리합니다.",
+      "3. 확인된 내용을 바로 복사해서 쓸 수 있는 형태로 정리합니다.",
       "",
-      `사용자 요청: ${input}`
+      `요청: ${route.split?.instruction || input}`
     ].join("\n")
   };
 }
